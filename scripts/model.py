@@ -124,7 +124,7 @@ class Model_restricted(torch.nn.Module):
         )
 
         self.weights = torch.nn.Parameter(
-            torch.randn(self.nlayers, 4, dtype=torch.cdouble)
+            torch.randn(self.nlayers, 2, dtype=torch.cdouble)
         )
 
     def forward(self, v, U):
@@ -140,8 +140,8 @@ class Model_restricted(torch.nn.Module):
                     + self.weights[i, 1] * generators[mu + 1]
                 )
                 w_minus = (
-                    self.weights[i, 2] * generators[0]
-                    + self.weights[i, 3] * generators[mu + 1]
+                    self.weights[i, 0] * generators[0]
+                    - self.weights[i, 1] * generators[mu + 1]
                 )
                 curr_terms += torch.einsum(
                     "ij,...jc->...ic", w_plus, v_pts[2 * mu + 1]

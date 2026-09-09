@@ -36,7 +36,7 @@ sys.path.insert(0, "scripts")
 args = docopt(__doc__)
 model_name = args["--model"]
 mass = args["--mass"]
-kappa = 1/(2*(float(mass)+4))
+kappa = 1 / (2 * (float(mass) + 4))
 
 # Load model json
 model_json_path = f"models/{model_name}.json"
@@ -75,6 +75,9 @@ coefficients = get_coefficients_from_weights(
     weights, path_length_min=0, path_length_max=min(nlayers, 4)
 )
 
+for k, v in coefficients.items():
+    coefficients[k] /= kappa ** get_path_length(k)
+
 # Get hopping coefficients
 hopping_weights = get_hopping_weights(float(mass), nlayers)
 hopping_coefficients = get_coefficients_from_weights(
@@ -84,7 +87,7 @@ hopping_coefficients = get_coefficients_from_weights(
 )
 
 for k, v in hopping_coefficients.items():
-    hopping_coefficients[k] /= kappa**get_path_length(k)
+    hopping_coefficients[k] /= kappa ** get_path_length(k)
 
 # get categories of paths
 categories = list()
@@ -164,36 +167,22 @@ hopping_coefficients_matrix_stds_clipped = torch.max(
 )
 
 # Coefficients matrix plot for hopping expansion
-fig, axs = plt.subplots(2, 1, figsize=(10, 6))
-im_means = axs[0].imshow(
+fig, ax = plt.subplots(1, 1, figsize=(10, 3))
+im_means = ax.imshow(
     hopping_coefficients_matrix_means_clipped.T,
-    norm=mcolors.LogNorm(vmax=1e0, vmin=1e-5),
+    # norm=mcolors.LogNorm(vmax=1e0, vmin=1e-5),
     aspect="auto",
 )
-im_stds = axs[1].imshow(
-    hopping_coefficients_matrix_stds_clipped.T,
-    norm=mcolors.LogNorm(vmax=1e0, vmin=1e-5),
-    aspect="auto",
-)
-axs[0].set_xticks(
+ax.set_xticks(
     ticks=[i for i in range(coefficients_matrix_means.shape[0])],
     labels=["" for k in categories],
 )
-axs[1].set_xticks(
-    ticks=[i for i in range(coefficients_matrix_means.shape[0])],
-    labels=[str(k) for k in categories],
-    rotation=90,
-)
-axs[1].set_xlabel("Path")
-axs[0].set_ylabel("Gamma structure index")
-axs[1].set_ylabel("Gamma structure index")
-axs[0].set_title("Mean over all coefficients in category")
-axs[1].set_title("Std over all coefficients in category")
+ax.set_xlabel("Path")
+ax.set_ylabel("Gamma structure index")
 fig.colorbar(im_means)
-fig.colorbar(im_stds)
-fig.suptitle(
+ax.set_title(
     f"Clifford algebra coefficients per path category\n"
-    f"model {model_name}, mass {mass}\n"
+    f"hopping expansion, mass {mass}\n"
     f"normalized by kappa^ell"
 )
 plt.savefig(
@@ -207,35 +196,24 @@ plt.savefig(
 )
 
 # Coefficients matrix plot
-fig, axs = plt.subplots(2, 1, figsize=(10, 6))
-im_means = axs[0].imshow(
+fig, ax = plt.subplots(1, 1, figsize=(10, 3))
+im_means = ax.imshow(
     coefficients_matrix_means_clipped.T,
-    norm=mcolors.LogNorm(vmax=1e0, vmin=1e-5),
+    # norm=mcolors.LogNorm(vmax=1e0, vmin=1e-5),
     aspect="auto",
 )
-im_stds = axs[1].imshow(
-    coefficients_matrix_stds_clipped.T,
-    norm=mcolors.LogNorm(vmax=1e0, vmin=1e-5),
-    aspect="auto",
-)
-axs[0].set_xticks(
-    ticks=[i for i in range(coefficients_matrix_means.shape[0])],
-    labels=["" for k in categories],
-)
-axs[1].set_xticks(
+ax.set_xticks(
     ticks=[i for i in range(coefficients_matrix_means.shape[0])],
     labels=[str(k) for k in categories],
     rotation=90,
 )
-axs[1].set_xlabel("Path")
-axs[0].set_ylabel("Gamma structure index")
-axs[1].set_ylabel("Gamma structure index")
-axs[0].set_title("Mean over all coefficients in category")
-axs[1].set_title("Std over all coefficients in category")
+ax.set_xlabel("Path")
+ax.set_ylabel("Gamma structure index")
 fig.colorbar(im_means)
-fig.colorbar(im_stds)
-fig.suptitle(
-    f"Clifford algebra coefficients per path category\nmodel {model_name}, mass {mass}"
+ax.set_title(
+    f"Mean Clifford algebra coefficients per path category\n"
+    f"model {model_name}, mass {mass}\n"
+    f"normalized by kappa^ell"
 )
 plt.savefig(
     f"plots/png/categories/categories_{model_name}_m{mass}.png",
@@ -252,10 +230,10 @@ diff = (coefficients_matrix_means - hopping_coefficients_matrix_means).abs()
 diff = torch.max(diff, 1e-5 * torch.ones_like(diff))
 
 # Difference from hopping expansion coefficients
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(10, 3))
 plt.imshow(
     diff.T,
-    norm=mcolors.LogNorm(vmin=1e-5, vmax=1e0),
+    # norm=mcolors.LogNorm(vmin=1e-5, vmax=1e0),
     aspect="auto",
 )
 plt.xticks(
@@ -268,7 +246,8 @@ plt.ylabel("Gamma structure index")
 plt.colorbar()
 plt.title(
     f"Difference from hopping expansion coefficients per path category\n"
-    f"model {model_name}, mass {mass}"
+    f"model {model_name}, mass {mass}\n"
+    f"normalized by kappa^ell"
 )
 plt.savefig(
     f"plots/png/categories/comparison_hopping_{model_name}_m{mass}.png",

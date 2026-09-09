@@ -45,7 +45,9 @@ masses = sorted(set(extract_mass(f) for f in os.listdir("data/residuals")))
 # Aggregate all available residuals data
 for mass in masses:
     # Hopping expansion
-    hopping_path = f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
+    hopping_path = (
+        f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
+    )
     if os.path.exists(hopping_path):
         data = torch.load(hopping_path, weights_only=True)
 
@@ -54,7 +56,9 @@ for mass in masses:
         stds_hopping.append(torch.std(data))
 
     # Clifford model
-    clifford_path = f"data/residuals/residuals_{nsteps}layers_{vol}_Clifford_m{mass:.2f}.pt"
+    clifford_path = (
+        f"data/residuals/residuals_{nsteps}layers_{vol}_Clifford_m{mass:.2f}.pt"
+    )
     if os.path.exists(clifford_path):
         data = torch.load(clifford_path, weights_only=True)
         masses_Clifford.append(mass)
@@ -108,11 +112,15 @@ plt.errorbar(
 
 plt.xlabel("Mass")
 plt.ylabel("Approximation Quality")
-plt.title(f"Approximation Quality vs Mass (nlayers={nsteps})")
+plt.title(f"Approximation Quality vs Mass (nlayers={nsteps}, volume={vol})")
+plt.yscale("log")
 plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
 
-plt.ylim(0, 1.1 * max(means_Clifford + means_restricted))
+plt.ylim(
+    min(means_Clifford + means_restricted + means_hopping) / 1.3,
+    1.3 * max(means_Clifford + means_restricted),
+)
 
 plt.savefig(
     f"plots/png/residuals/residuals_{nsteps}steps_{vol}.png",

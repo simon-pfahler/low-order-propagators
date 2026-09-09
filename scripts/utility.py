@@ -160,9 +160,9 @@ def get_weights_from_restricted(weights_dict_restricted):
             )
             weights[f"weights.{n}"][2 * mu + 2, :, 0] = weights_dict_restricted[
                 "weights"
-            ][n - 1, 2]
+            ][n - 1, 0]
             weights[f"weights.{n}"][2 * mu + 2, :, mu + 1] = (
-                weights_dict_restricted["weights"][n - 1, 3]
+                -weights_dict_restricted["weights"][n - 1, 1]
             )
 
     return weights
