@@ -1,0 +1,7 @@
+*
+!.gitignore
+!scripts/
+!scripts/*
+!models/
+!models/*
+!Snakefile

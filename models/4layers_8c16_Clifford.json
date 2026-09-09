@@ -1,0 +1,7 @@
+{
+  "model_type": "Clifford",
+  "lattice_size": [8,8,8,16],
+  "train_configs": [1200,2200,2350,4724],
+  "test_configs": [1000,2000,2347,786],
+  "nlayers": 4
+}
