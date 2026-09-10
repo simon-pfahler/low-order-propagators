@@ -39,6 +39,9 @@ rule all:
         expand("plots/pdf/residuals/residuals_{nsteps}steps_{volume}.pdf", nsteps=LAYERS, volume=[VOLUME, "16c32"]),
         expand("plots/png/residuals/residuals_vs_layers_m{mass}_{volume}.png", mass=MASSES, volume=[VOLUME, "16c32"]),
         expand("plots/pdf/residuals/residuals_vs_layers_m{mass}_{volume}.pdf", mass=MASSES, volume=[VOLUME, "16c32"]),
+        # Iteration count plots
+        expand("plots/png/iteration_counts/iteration_counts_{nsteps}steps_{volume}.png", nsteps=LAYERS, volume=[VOLUME, "16c32"]),
+        expand("plots/pdf/iteration_counts/iteration_counts_{nsteps}steps_{volume}.pdf", nsteps=LAYERS, volume=[VOLUME, "16c32"]),
         # Mass dependence plots
         expand(f"plots/png/mass_dependence/mass_dependence_{{layers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.png", layers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
         expand(f"plots/pdf/mass_dependence/mass_dependence_{{layers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.pdf", layers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
@@ -137,6 +140,41 @@ rule get_hopping_residuals:
     shell:
         "python scripts/get_residuals_hopping.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass}"
 
+rule get_model_iteration_counts16c32:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        "scripts/get_iteration_counts16c32.py",
+        "data/weights/weights_{nsteps}layers_8c16_{model_type}_m{mass}.pt"
+    output:
+        "data/iteration_counts/iteration_counts_{nsteps}layers_16c32_{model_type}_m{mass}.pt"
+    shell:
+        "python scripts/get_iteration_counts16c32.py --model {wildcards.nsteps}layers_8c16_{wildcards.model_type} --mass {wildcards.mass}"
+
+rule get_model_iteration_counts:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        "scripts/get_iteration_counts.py",
+        "data/weights/weights_{model_name}_m{mass}.pt"
+    output:
+        "data/iteration_counts/iteration_counts_{model_name}_m{mass}.pt"
+    shell:
+        "python scripts/get_iteration_counts.py --model {wildcards.model_name} --mass {wildcards.mass}"
+
+rule get_hopping_iteration_counts:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        "scripts/get_iteration_counts_hopping.py"
+    output:
+        "data/iteration_counts/iteration_counts_{nsteps}steps_{volume}_hopping_m{mass}.pt"
+    shell:
+        "python scripts/get_iteration_counts_hopping.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass}"
+
 rule plot_residuals_vs_layers:
     threads: 1
     resources:
@@ -176,6 +214,26 @@ rule plot_residuals:
         "plots/pdf/residuals/residuals_{nsteps}steps_{volume}.pdf"
     shell:
         "python scripts/plot_residuals.py --nsteps {wildcards.nsteps} --volume {wildcards.volume}"
+
+rule plot_iteration_counts:
+    threads: 1
+    resources:
+        cores = 1
+    input:
+        "scripts/plot_iteration_counts.py",
+        lambda wildcards: expand(
+            "data/iteration_counts/iteration_counts_{nsteps}layers_{volume}_{model_type}_m{mass}.pt",
+            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume, model_type=MODEL_TYPES
+        ),
+        lambda wildcards: expand(
+            "data/iteration_counts/iteration_counts_{nsteps}steps_{volume}_hopping_m{mass}.pt",
+            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
+        )
+    output:
+        "plots/png/iteration_counts/iteration_counts_{nsteps}steps_{volume}.png",
+        "plots/pdf/iteration_counts/iteration_counts_{nsteps}steps_{volume}.pdf"
+    shell:
+        "python scripts/plot_iteration_counts.py --nsteps {wildcards.nsteps} --volume {wildcards.volume}"
 
 rule plot_mass_dependence:
     threads: 16
