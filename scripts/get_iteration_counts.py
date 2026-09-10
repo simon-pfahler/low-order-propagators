@@ -35,9 +35,10 @@ with open(model_json_path, "r") as f:
 model_type = model_json["model_type"]
 if model_type not in ["restricted", "4x4", "Clifford"]:
     raise ValueError(f"Model type '{model_type}' not supported!")
-lattice_size = [16, 16, 16, 32]
+lattice_size = model_json["lattice_size"]
 nlayers = model_json["nlayers"]
-test_configs = [282, 472, 329, 591]
+train_configs = model_json["train_configs"]
+test_configs = model_json["test_configs"]
 
 print(f"Test GMRES solves for model {model_name} with mass={mass:.2f}")
 
