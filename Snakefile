@@ -43,21 +43,8 @@ rule all:
         expand(f"plots/png/mass_dependence/mass_dependence_{{nlayers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.png", nlayers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
         expand(f"plots/pdf/mass_dependence/mass_dependence_{{nlayers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.pdf", nlayers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
         # Extra seeded trainings
-        expand(f"data/weights/weights_restricted_m1.00_seed{seed}.pt", seed=range(5)),
-        expand(f"data/histories/history_{model_name}_m{mass}_seed{seed}.pt", seed=range(5))
-
-rule train:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/train.py",
-        "models/{model_name}.json"
-    output:
-        "data/weights/weights_{model_name}_m{mass}_seed{seed}.pt",
-        "data/histories/history_{model_name}_m{mass}_seed{seed}.txt"
-    shell:
-        "python scripts/train.py --model {wildcards.model_name} --mass {wildcards.mass} --seed {wildcards.seed}"
+        expand("data/weights/seeded_weights_{layers}layers_8c16_restricted_m1.00_seed{seed}.pt", layers=LAYERS, seed=range(5)),
+        expand("data/histories/seeded_history_{layers}layers_8c16_restricted_m1.00_seed{seed}.txt", layers=LAYERS, seed=range(5))
 
 rule train:
     threads: 8
@@ -71,6 +58,19 @@ rule train:
         "data/histories/history_{model_name}_m{mass}.txt"
     shell:
         "python scripts/train.py --model {wildcards.model_name} --mass {wildcards.mass}"
+
+rule train_seeded:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        "scripts/train.py",
+        "models/{model_name}.json"
+    output:
+        "data/weights/seeded_weights_{model_name}_m{mass}_seed{seed}.pt",
+        "data/histories/seeded_history_{model_name}_m{mass}_seed{seed}.txt"
+    shell:
+        "python scripts/train.py --model {wildcards.model_name} --mass {wildcards.mass} --seed {wildcards.seed}"
 
 rule plot_training_history:
     threads: 1
