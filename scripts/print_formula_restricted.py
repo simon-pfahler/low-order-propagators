@@ -69,5 +69,5 @@ layer_weights = layer_weights.real
 print(f"Overall factor: {overall_factor:.2e}")
 for l in range(layers):
     print(
-        f"Layer {l} formula: ({layer_weights[l,0]:.2e} I + {layer_weights[l,1]:.2e} g)H+ + ({layer_weights[l,2]:.2e} I + {layer_weights[l,3]:.2e} g)H-)"
+        f"Layer {l} formula: ({layer_weights[l,0]:.2e} I + {layer_weights[l,1]:.2e} g)H+ + ({layer_weights[l,0]:.2e} I - {layer_weights[l,1]:.2e} g)H-)"
     )
