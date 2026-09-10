@@ -51,7 +51,9 @@ nstepss = sorted(
 # Aggregate all available residuals data
 for nsteps in nstepss:
     # Hopping expansion
-    hopping_path = f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
+    hopping_path = (
+        f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
+    )
     if os.path.exists(hopping_path):
         data = torch.load(hopping_path, weights_only=True)
 
@@ -60,7 +62,9 @@ for nsteps in nstepss:
         stds_hopping.append(torch.std(data))
 
     # Clifford model
-    clifford_path = f"data/residuals/residuals_{nsteps}layers_{vol}_Clifford_m{mass:.2f}.pt"
+    clifford_path = (
+        f"data/residuals/residuals_{nsteps}layers_{vol}_Clifford_m{mass:.2f}.pt"
+    )
     if os.path.exists(clifford_path):
         data = torch.load(clifford_path, weights_only=True)
         nstepss_Clifford.append(nsteps)
