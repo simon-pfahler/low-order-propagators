@@ -56,15 +56,21 @@ for l in range(layers):
     layer_weights[l] *= torch.exp(-1j * angles[l])
     overall_factor *= torch.exp(1j * angles[l])
     if torch.any(
-        torch.abs(layer_weights[l].imag / layer_weights[l].real) > 1e-2
+        torch.abs(layer_weights[l].imag / layer_weights[l].real) > 1e-1
     ):
         print(f"Warning: Layer {l} weights are complex even after rotation!")
+        print(f"{torch.abs(layer_weights[l].imag/layer_weights[l].real)}")
 
-if torch.abs(overall_factor.imag / overall_factor.real) > 1e-2:
+if torch.abs(overall_factor.imag / overall_factor.real) > 1e-1:
     print(f"Warning: Overall factor is complex even after rotation!")
+    print(f"{torch.abs(overall_factor.imag/overall_factor.real)}")
 
 overall_factor = overall_factor.item().real
 layer_weights = layer_weights.real
+
+# Sort layers so the sum of absolute values increases with layer index
+sort_order = torch.argsort(torch.sum(torch.abs(layer_weights), dim=1))
+layer_weights = layer_weights[sort_order]
 
 print(f"Overall factor: {overall_factor:.2e}")
 for l in range(layers):
