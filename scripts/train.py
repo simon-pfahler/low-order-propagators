@@ -81,10 +81,10 @@ weights_path = f"data/weights/weights_{model_name}_m{mass:.2f}.pt"
 history_path = f"data/histories/history_{model_name}_m{mass:.2f}.txt"
 if seed is not None:
     weights_path = (
-        f"data/weights/weights_{model_name}_m{mass:.2f}_seed{seed}.pt"
+        f"data/weights/seeded_weights_{model_name}_m{mass:.2f}_seed{seed}.pt"
     )
     history_path = (
-        f"data/histories/history_{model_name}_m{mass:.2f}_seed{seed}.txt"
+        f"data/histories/seeded_history_{model_name}_m{mass:.2f}_seed{seed}.txt"
     )
     torch.manual_seed(seed)
 
