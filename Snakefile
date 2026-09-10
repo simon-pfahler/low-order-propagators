@@ -6,7 +6,7 @@ LAYERS = [1,2,3,4,6,8]
 MODEL_TYPES=["Clifford", "restricted"]
 VOLUME="8c16"
 
-MASSES = [f"{m:.2f}" for m in sorted([round(float(m), 2) for m in np.arange(-5, 2.2, 0.2).tolist()] + [-0.9, -0.75, -0.7, -0.5])]
+MASSES = [f"{m:.2f}" for m in sorted([round(float(m), 2) for m in np.arange(-3.8, 2.2, 0.2).tolist()] + [-0.9, -0.75, -0.7, -0.5])]
 # <<< Parameters
 
 # >>> Helper functions
