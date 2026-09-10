@@ -40,8 +40,11 @@ rule all:
         expand("plots/png/residuals/residuals_vs_layers_m{mass}_{volume}.png", mass=MASSES, volume=[VOLUME, "16c32"]),
         expand("plots/pdf/residuals/residuals_vs_layers_m{mass}_{volume}.pdf", mass=MASSES, volume=[VOLUME, "16c32"]),
         # Mass dependence plots
-        expand(f"plots/png/mass_dependence/mass_dependence_{{nlayers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.png", nlayers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
-        expand(f"plots/pdf/mass_dependence/mass_dependence_{{nlayers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.pdf", nlayers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
+        expand(f"plots/png/mass_dependence/mass_dependence_{{layers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.png", layers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
+        expand(f"plots/pdf/mass_dependence/mass_dependence_{{layers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.pdf", layers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
+        # Convergence speed plots
+        expand("plots/png/convergence/convergence_speed_{volume}.png", volume=[VOLUME, "16c32"]),
+        expand("plots/pdf/convergence/convergence_speed_{volume}.pdf", volume=[VOLUME, "16c32"]),
         # Extra seeded trainings
         expand("data/weights/seeded_weights_{layers}layers_8c16_restricted_m1.00_seed{seed}.pt", layers=LAYERS, seed=range(5)),
         expand("data/histories/seeded_history_{layers}layers_8c16_restricted_m1.00_seed{seed}.txt", layers=LAYERS, seed=range(5))
@@ -181,14 +184,14 @@ rule plot_mass_dependence:
     input:
         "scripts/plot_mass_dependence_coefficients.py",
         lambda wildcards: expand(
-            "data/weights/weights_{nlayers}layers_{VOLUME}_{model_type}_m{mass}.pt",
-            nlayers=wildcards.nlayers, VOLUME=VOLUME, model_type=wildcards.model_type, mass=MASSES
+            "data/weights/weights_{layers}layers_{VOLUME}_{model_type}_m{mass}.pt",
+            layers=wildcards.layers, VOLUME=VOLUME, model_type=wildcards.model_type, mass=MASSES
         ),
     output:
-        "plots/png/mass_dependence/mass_dependence_{nlayers}layers_{VOLUME}_{model_type}_pathlength{path_length}.png",
-        "plots/pdf/mass_dependence/mass_dependence_{nlayers}layers_{VOLUME}_{model_type}_pathlength{path_length}.pdf"
+        "plots/png/mass_dependence/mass_dependence_{layers}layers_{VOLUME}_{model_type}_pathlength{path_length}.png",
+        "plots/pdf/mass_dependence/mass_dependence_{layers}layers_{VOLUME}_{model_type}_pathlength{path_length}.pdf"
     shell:
-        "python scripts/plot_mass_dependence_coefficients.py --model_type {wildcards.model_type} --volume {VOLUME} --nlayers {wildcards.nlayers} --path_length {wildcards.path_length}"
+        "python scripts/plot_mass_dependence_coefficients.py --model_type {wildcards.model_type} --volume {VOLUME} --layers {wildcards.layers} --path_length {wildcards.path_length}"
 
 rule plot_coefficients:
     threads: 16
@@ -219,3 +222,19 @@ rule plot_categories:
         "plots/pdf/categories/comparison_hopping_{model_name}_m{mass}.pdf"
     shell:
         "python scripts/plot_categories.py --model {wildcards.model_name} --mass {wildcards.mass}"
+
+rule plot_convergence_speed:
+    threads: 1
+    resources:
+        cores = 1
+    input:
+        "scripts/plot_convergence_speed.py",
+        lambda wildcards: expand(
+            "data/weights/weights_{layers}layers_8c16_{model_type}_m{mass}.pt",
+            layers=LAYERS, model_type=MODEL_TYPES, mass=MASSES
+        ),
+    output:
+        "plots/png/convergence/convergence_speed_{volume}.png",
+        "plots/pdf/convergence/convergence_speed_{volume}.pdf"
+    shell:
+        "python scripts/plot_convergence_speed.py --volume {wildcards.volume}"
