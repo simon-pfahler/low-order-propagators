@@ -41,7 +41,23 @@ rule all:
         expand("plots/pdf/residuals/residuals_vs_layers_m{mass}_{volume}.pdf", mass=MASSES, volume=[VOLUME, "16c32"]),
         # Mass dependence plots
         expand(f"plots/png/mass_dependence/mass_dependence_{{nlayers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.png", nlayers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
-        expand(f"plots/pdf/mass_dependence/mass_dependence_{{nlayers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.pdf", nlayers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5)))
+        expand(f"plots/pdf/mass_dependence/mass_dependence_{{nlayers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.pdf", nlayers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
+        # Extra seeded trainings
+        expand(f"data/weights/weights_restricted_m1.00_seed{seed}.pt", seed=range(5)),
+        expand(f"data/histories/history_{model_name}_m{mass}_seed{seed}.pt", seed=range(5))
+
+rule train:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        "scripts/train.py",
+        "models/{model_name}.json"
+    output:
+        "data/weights/weights_{model_name}_m{mass}_seed{seed}.pt",
+        "data/histories/history_{model_name}_m{mass}_seed{seed}.txt"
+    shell:
+        "python scripts/train.py --model {wildcards.model_name} --mass {wildcards.mass} --seed {wildcards.seed}"
 
 rule train:
     threads: 8

@@ -1,13 +1,14 @@
 """Train a model specified in a json file.
 
 Usage:
-    train.py --model=<name> --mass=<mass> [--training-steps=<n>] [--lr=<f>]
+    train.py --model=<name> --mass=<mass> [--training-steps=<n>] [--lr=<f>] [--seed=<n>]
 
 Options:
     --model=<name>          Name of the model json file (in `models/{name}.json`)
     --mass=<mass>           Mass parameter value
     --training-steps=<n>    Number of training steps [default: 10000]
     --lr=<f>                Learning rate of optimizer [default: 1e-3]
+    --seed=<n>              Seed of the training
 """
 
 import json
@@ -29,6 +30,7 @@ model_name = args["--model"]
 mass = float(args["--mass"])
 training_steps = int(args["--training-steps"])
 lr = float(args["--lr"])
+seed = int(args["--seed"]) if args["--seed"] else None
 
 # Load model json
 model_json_path = f"models/{model_name}.json"
@@ -77,6 +79,14 @@ model = model.to(device)
 # Create output filenames
 weights_path = f"data/weights/weights_{model_name}_m{mass:.2f}.pt"
 history_path = f"data/histories/history_{model_name}_m{mass:.2f}.txt"
+if seed is not None:
+    weights_path = (
+        f"data/weights/weights_{model_name}_m{mass:.2f}_seed{seed}.pt"
+    )
+    history_path = (
+        f"data/histories/history_{model_name}_m{mass:.2f}_seed{seed}.txt"
+    )
+    torch.manual_seed(seed)
 
 # Ensure output directories exist
 os.makedirs("data/weights", exist_ok=True)
