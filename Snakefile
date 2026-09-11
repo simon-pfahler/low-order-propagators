@@ -326,11 +326,11 @@ rule plot_iteration_counts:
         "scripts/plot_iteration_counts.py",
         lambda wildcards: expand(
             "data/iteration_counts/iteration_counts_{nsteps}layers_{volume}_{model_type}_m{mass}.pt",
-            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume, model_type=MODEL_TYPES
+            mass=[m for m in MASSES if m >= -0.75], nsteps=wildcards.nsteps, volume=wildcards.volume, model_type=MODEL_TYPES
         ),
         lambda wildcards: expand(
             "data/iteration_counts/iteration_counts_{nsteps}steps_{volume}_hopping_m{mass}.pt",
-            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
+            mass=[m for m in MASSES if m >= -0.75], nsteps=wildcards.nsteps, volume=wildcards.volume
         )
     output:
         "plots/png/iteration_counts/iteration_counts_{nsteps}steps_{volume}.png",
