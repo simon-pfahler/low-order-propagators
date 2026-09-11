@@ -129,6 +129,9 @@ plt.ylim(
     1.3 * max(means_Clifford + means_restricted),
 )
 
+os.makedirs("plots/png/residuals/", exist_ok=True)
+os.makedirs("plots/pdf/residuals/", exist_ok=True)
+
 plt.savefig(
     f"plots/png/residuals/{path_prefix}_{nsteps}steps_{vol}.png",
     dpi=300,

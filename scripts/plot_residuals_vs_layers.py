@@ -132,6 +132,9 @@ plt.yscale("log")
 plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
 
+os.makedirs("plots/png/residuals/", exist_ok=True)
+os.makedirs("plots/pdf/residuals/", exist_ok=True)
+
 plt.savefig(
     f"plots/png/residuals/residuals_vs_layers_m{mass:.2f}_{vol}.png",
     dpi=300,
