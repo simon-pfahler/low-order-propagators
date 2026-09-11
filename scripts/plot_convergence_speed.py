@@ -167,8 +167,8 @@ plt.errorbar(
 )
 
 plt.xlabel("Mass")
-plt.ylabel(r"Convergence factor $b$ ($Q \propto b^n$)")
-plt.title(f"Convergence speed vs mass (volume={vol})")
+plt.ylabel(r"Convergence rate $b$ ($Q \propto b^n$)")
+plt.title(f"Convergence rate vs mass (volume={vol})")
 plt.ylim(0, 1)
 plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
