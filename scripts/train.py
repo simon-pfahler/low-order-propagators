@@ -103,15 +103,23 @@ test_cost = torch.inf
 
 old_state = torch.random.get_rng_state()
 torch.manual_seed(1337)
-v_test = torch.randn(*lattice_size, 4, 3, dtype=torch.cdouble)
-v_test /= qcd_ml.util.linear_algebra.norm(v_test)
+v_tests = [
+    torch.randn(*lattice_size, 4, 3, dtype=torch.cdouble)
+    for _ in range(len(test_Us))
+]
+v_tests = [v / qcd_ml.util.linear_algebra.norm(v) for v in v_tests]
 torch.random.set_rng_state(old_state)
 
 for t in range(training_steps + 1):
-    v = torch.randn(*lattice_size, 4, 3, dtype=torch.cdouble)
-    v /= qcd_ml.util.linear_algebra.norm(v)
+    vs = [
+        torch.randn(*lattice_size, 4, 3, dtype=torch.cdouble)
+        for _ in range(len(train_Us))
+    ]
+    vs = [v / qcd_ml.util.linear_algebra.norm(v) for v in vs]
 
-    diffs = [model.forward(w(v), U) - v for w, U in zip(train_ws, train_Us)]
+    diffs = [
+        model.forward(w(v), U) - v for v, w, U in zip(vs, train_ws, train_Us)
+    ]
     cost = sum(
         qcd_ml.util.linear_algebra.innerproduct(diff, diff).real
         for diff in diffs
@@ -126,7 +134,7 @@ for t in range(training_steps + 1):
         with torch.no_grad():
             diffs_test = [
                 model.forward(w(v_test), U) - v_test
-                for w, U in zip(test_ws, test_Us)
+                for v_test, w, U in zip(v_tests, test_ws, test_Us)
             ]
             new_test_cost = sum(
                 qcd_ml.util.linear_algebra.innerproduct(diff, diff).real
