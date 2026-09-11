@@ -125,25 +125,19 @@ if show_hopping:
 
 plt.figure(figsize=(5, 5))
 
-for i, l in enumerate(layers):
-    plt.scatter(
-        coefficients[i].real,
-        coefficients[i].imag,
-        label=f"{model_type} model, {l} layers",
-    )
-
-if show_hopping:
-    plt.scatter(
-        hopping_coefficient.real,
-        hopping_coefficient.imag,
-        label=f"Hopping expansion",
-    )
+plt.plot(
+    layers,
+    coefficients.real,
+    "o",
+    linestyle="None",
+    label=f"{model_type} model",
+)
+plt.axhline(hopping_coefficient.real, label=f"Hopping expansion", c="red")
 
 plt.grid()
 plt.legend()
-plt.axis("equal")
-plt.xlabel("Real part")
-plt.ylabel("Imaginary part")
+plt.xlabel("Layers")
+plt.ylabel("Real part of coefficient")
 plt.title(
     f"Coefficient evolution for {model_type} models\n"
     f"path {cpath}, Gamma index {gamma_index}, at mass {mass}"
