@@ -36,12 +36,21 @@ def extract_layers_or_steps(filename):
     return nsteps
 
 
-def fit_convergence_factor(nsteps, means):
-    """Fit r(n) = A * b^n via log-linear regression; return b."""
+def fit_convergence_factor(nsteps, means, sigmas):
+    """Fit r(n) = A * b^n via weighted log-linear regression."""
     nsteps = np.asarray(nsteps, dtype=float)
-    log_means = np.log(np.asarray(means, dtype=float))
-    slope, _ = np.polyfit(nsteps, log_means, 1)
-    return float(np.exp(slope))
+    means = np.asarray(means, dtype=float)
+    sigmas = np.asarray(sigmas, dtype=float)
+    log_means = np.log(means)
+    log_sigmas = sigmas / means
+    cov_mode = True if len(nsteps) > 2 else "unscaled"
+    coeffs, cov = np.polyfit(
+        nsteps, log_means, 1, w=1.0 / log_sigmas, cov=cov_mode
+    )
+    slope, slope_var = coeffs[0], cov[0, 0]
+    b = float(np.exp(slope))
+    b_err = float(b * np.sqrt(slope_var))
+    return b, b_err
 
 
 # Parse docopt arguments
@@ -50,10 +59,13 @@ vol = args["--volume"]
 
 masses_hopping = []
 factors_hopping = []
+factors_hopping_err = []
 masses_Clifford = []
 factors_Clifford = []
+factors_Clifford_err = []
 masses_restricted = []
 factors_restricted = []
+factors_restricted_err = []
 
 # Find all masses
 masses = sorted(set(extract_mass(f) for f in os.listdir("data/residuals")))
@@ -68,12 +80,16 @@ for mass in masses:
         path = f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
-            hopping_points.append((nsteps, float(torch.mean(data))))
+            mean = float(torch.mean(data))
+            sem = float(torch.std(data) / np.sqrt(data.numel()))
+            hopping_points.append((nsteps, mean, sem))
 
     if len(hopping_points) >= 2:
-        ns, ms = zip(*hopping_points)
+        ns, ms, ss = zip(*hopping_points)
+        b, b_err = fit_convergence_factor(ns, ms, ss)
         masses_hopping.append(mass)
-        factors_hopping.append(fit_convergence_factor(ns, ms))
+        factors_hopping.append(b)
+        factors_hopping_err.append(b_err)
 
     # Clifford model
     clifford_points = []
@@ -83,12 +99,16 @@ for mass in masses:
         path = f"data/residuals/residuals_{nsteps}layers_{vol}_Clifford_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
-            clifford_points.append((nsteps, float(torch.mean(data))))
+            mean = float(torch.mean(data))
+            sem = float(torch.std(data) / np.sqrt(data.numel()))
+            clifford_points.append((nsteps, mean, sem))
 
     if len(clifford_points) >= 2:
-        ns, ms = zip(*clifford_points)
+        ns, ms, ss = zip(*clifford_points)
+        b, b_err = fit_convergence_factor(ns, ms, ss)
         masses_Clifford.append(mass)
-        factors_Clifford.append(fit_convergence_factor(ns, ms))
+        factors_Clifford.append(b)
+        factors_Clifford_err.append(b_err)
 
     # Restricted model
     restricted_points = []
@@ -98,41 +118,51 @@ for mass in masses:
         path = f"data/residuals/residuals_{nsteps}layers_{vol}_restricted_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
-            restricted_points.append((nsteps, float(torch.mean(data))))
+            mean = float(torch.mean(data))
+            sem = float(torch.std(data) / np.sqrt(data.numel()))
+            restricted_points.append((nsteps, mean, sem))
 
     if len(restricted_points) >= 2:
-        ns, ms = zip(*restricted_points)
+        ns, ms, ss = zip(*restricted_points)
+        b, b_err = fit_convergence_factor(ns, ms, ss)
         masses_restricted.append(mass)
-        factors_restricted.append(fit_convergence_factor(ns, ms))
+        factors_restricted.append(b)
+        factors_restricted_err.append(b_err)
 
 # Create plot
 plt.figure(figsize=(10, 6))
 
-plt.plot(
+plt.errorbar(
     masses_hopping,
     factors_hopping,
+    yerr=factors_hopping_err,
     linestyle="none",
     color="blue",
     marker="o",
     markerfacecolor="none",
+    capsize=3,
     label="Hopping expansion",
 )
-plt.plot(
+plt.errorbar(
     masses_Clifford,
     factors_Clifford,
+    yerr=factors_Clifford_err,
     linestyle="none",
     color="orange",
     marker="s",
     markerfacecolor="none",
+    capsize=3,
     label="Clifford model",
 )
-plt.plot(
+plt.errorbar(
     masses_restricted,
     factors_restricted,
+    yerr=factors_restricted_err,
     linestyle="none",
     color="green",
     marker="D",
     markerfacecolor="none",
+    capsize=3,
     label="Restricted model",
 )
 
