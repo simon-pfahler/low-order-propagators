@@ -120,6 +120,9 @@ plt.ylim(
     1.3 * max(means_Clifford + means_restricted),
 )
 
+os.makedirs("plots/png/iteration_counts/", exist_ok=True)
+os.makedirs("plots/pdf/iteration_counts/", exist_ok=True)
+
 plt.savefig(
     f"plots/png/iteration_counts/iteration_counts_{nsteps}steps_{vol}.png",
     dpi=300,
