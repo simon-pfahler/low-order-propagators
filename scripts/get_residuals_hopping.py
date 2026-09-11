@@ -1,12 +1,13 @@
 """Calculate residuals for the hopping expansion.
 
 Usage:
-    get_residuals_hopping.py --nsteps=<n> --volume=<vol> --mass=<m>
+    get_residuals_hopping.py --nsteps=<n> --volume=<vol> --mass=<m> [--random]
 
 Options:
     --nsteps=<n>            Number of steps in the hopping expansion
     --volume=<vol>          Volume string
     --mass=<mass>           Mass parameter value
+    --random                Calculate residuals using random gauge fields
 """
 
 import json
@@ -16,7 +17,7 @@ import sys
 import qcd_ml
 import torch
 from docopt import docopt
-from utility import get_config_path
+from utility import get_config_path, get_gauge_field
 
 sys.path.insert(0, "scripts")
 
@@ -35,6 +36,7 @@ elif vol == "16c32":
 else:
     raise ValueError(f"Volume {vol} not supported!")
 mass = float(args["--mass"])
+random = True if args["--random"] else False
 
 print(
     f"Calculating residuals for hopping expansion with {nsteps} steps,"
@@ -58,6 +60,8 @@ test_Us = [
     torch.load(get_config_path(lattice_size, c), weights_only=True)
     for c in test_configs
 ]
+if random:
+    test_Us = [get_gauge_field(lattice_size, 3, i) for i in range(4)]
 test_ws = [qcd_ml.qcd.dirac.dirac_wilson(U, mass) for U in test_Us]
 
 
@@ -96,8 +100,9 @@ for sample_idx in range(100):
 # Ensure output directory exists
 os.makedirs("data/residuals", exist_ok=True)
 
+outpath = f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
+if random:
+    outpath = f"data/residuals/random_residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
+
 # Save output
-torch.save(
-    residuals,
-    f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt",
-)
+torch.save(residuals, outpath)

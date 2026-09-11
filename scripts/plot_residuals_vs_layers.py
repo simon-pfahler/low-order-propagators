@@ -1,11 +1,12 @@
 """Plot residuals for different approximations of D^-1.
 
 Usage:
-    plot_residuals_vs_layers.py --mass=<f> --volume=<vol>
+    plot_residuals_vs_layers.py --mass=<f> --volume=<vol> [--random]
 
 Options:
     --mass=<f>              Mass parameter
     --volume=<vol>          Volume string
+    --random                Plot for random gauge fields
 """
 
 import os
@@ -32,6 +33,11 @@ def extract_layers_or_steps(filename):
 args = docopt(__doc__)
 mass = float(args["--mass"])
 vol = args["--volume"]
+random = True if args["--random"] else False
+
+path_prefix = "residuals"
+if random:
+    path_prefix = "random_residuals"
 
 means_hopping = []
 stds_hopping = []
@@ -51,9 +57,7 @@ nstepss = sorted(
 # Aggregate all available residuals data
 for nsteps in nstepss:
     # Hopping expansion
-    hopping_path = (
-        f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
-    )
+    hopping_path = f"data/residuals/{path_prefix}_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
     if os.path.exists(hopping_path):
         data = torch.load(hopping_path, weights_only=True)
 
@@ -62,9 +66,7 @@ for nsteps in nstepss:
         stds_hopping.append(torch.std(data))
 
     # Clifford model
-    clifford_path = (
-        f"data/residuals/residuals_{nsteps}layers_{vol}_Clifford_m{mass:.2f}.pt"
-    )
+    clifford_path = f"data/residuals/{path_prefix}_{nsteps}layers_{vol}_Clifford_m{mass:.2f}.pt"
     if os.path.exists(clifford_path):
         data = torch.load(clifford_path, weights_only=True)
         nstepss_Clifford.append(nsteps)
@@ -72,7 +74,7 @@ for nsteps in nstepss:
         stds_Clifford.append(torch.std(data))
 
     # Restricted model
-    restricted_path = f"data/residuals/residuals_{nsteps}layers_{vol}_restricted_m{mass:.2f}.pt"
+    restricted_path = f"data/residuals/{path_prefix}_{nsteps}layers_{vol}_restricted_m{mass:.2f}.pt"
     if os.path.exists(restricted_path):
         data = torch.load(restricted_path, weights_only=True)
         nstepss_restricted.append(nsteps)
@@ -118,7 +120,14 @@ plt.errorbar(
 
 plt.xlabel("Number of steps/layers")
 plt.ylabel("Approximation quality")
-plt.title(f"Approximation quality vs steps/layers (mass={mass:.2f})")
+if random:
+    plt.title(
+        f"Approximation quality vs steps/layers (mass={mass:.2f}, volume={vol}, random gauge fields)"
+    )
+else:
+    plt.title(
+        f"Approximation quality vs steps/layers (mass={mass:.2f}, volume={vol})"
+    )
 plt.yscale("log")
 plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)

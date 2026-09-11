@@ -1,11 +1,12 @@
 """Plot residuals for different approximations of D^-1.
 
 Usage:
-    plot_residuals.py --nsteps=<n> --volume=<vol>
+    plot_residuals.py --nsteps=<n> --volume=<vol> [--random]
 
 Options:
     --nsteps=<n>            Number of steps in the hopping expansion
     --volume=<vol>          Volume string
+    --random                Plot for random gauge fields
 """
 
 import os
@@ -28,6 +29,11 @@ def extract_mass(filename):
 args = docopt(__doc__)
 nsteps = int(args["--nsteps"])
 vol = args["--volume"]
+random = True if args["--random"] else False
+
+path_prefix = "residuals"
+if random:
+    path_prefix = "random_residuals"
 
 means_hopping = []
 stds_hopping = []
@@ -45,9 +51,7 @@ masses = sorted(set(extract_mass(f) for f in os.listdir("data/residuals")))
 # Aggregate all available residuals data
 for mass in masses:
     # Hopping expansion
-    hopping_path = (
-        f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
-    )
+    hopping_path = f"data/residuals/{path_prefix}_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
     if os.path.exists(hopping_path):
         data = torch.load(hopping_path, weights_only=True)
 
@@ -56,9 +60,7 @@ for mass in masses:
         stds_hopping.append(torch.std(data))
 
     # Clifford model
-    clifford_path = (
-        f"data/residuals/residuals_{nsteps}layers_{vol}_Clifford_m{mass:.2f}.pt"
-    )
+    clifford_path = f"data/residuals/{path_prefix}_{nsteps}layers_{vol}_Clifford_m{mass:.2f}.pt"
     if os.path.exists(clifford_path):
         data = torch.load(clifford_path, weights_only=True)
         masses_Clifford.append(mass)
@@ -66,7 +68,7 @@ for mass in masses:
         stds_Clifford.append(torch.std(data))
 
     # Restricted model
-    restricted_path = f"data/residuals/residuals_{nsteps}layers_{vol}_restricted_m{mass:.2f}.pt"
+    restricted_path = f"data/residuals/{path_prefix}_{nsteps}layers_{vol}_restricted_m{mass:.2f}.pt"
     if os.path.exists(restricted_path):
         data = torch.load(restricted_path, weights_only=True)
         masses_restricted.append(mass)
@@ -112,7 +114,12 @@ plt.errorbar(
 
 plt.xlabel("Mass")
 plt.ylabel("Approximation Quality")
-plt.title(f"Approximation Quality vs Mass (nlayers={nsteps}, volume={vol})")
+if random:
+    plt.title(
+        f"Approximation Quality vs Mass (nlayers={nsteps}, volume={vol}, random gauge fields)"
+    )
+else:
+    plt.title(f"Approximation Quality vs Mass (nlayers={nsteps}, volume={vol})")
 plt.yscale("log")
 plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
@@ -123,11 +130,11 @@ plt.ylim(
 )
 
 plt.savefig(
-    f"plots/png/residuals/residuals_{nsteps}steps_{vol}.png",
+    f"plots/png/residuals/{path_prefix}_{nsteps}steps_{vol}.png",
     dpi=300,
     bbox_inches="tight",
 )
 plt.savefig(
-    f"plots/pdf/residuals/residuals_{nsteps}steps_{vol}.pdf",
+    f"plots/pdf/residuals/{path_prefix}_{nsteps}steps_{vol}.pdf",
     bbox_inches="tight",
 )

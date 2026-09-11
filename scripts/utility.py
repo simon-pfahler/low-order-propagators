@@ -296,3 +296,29 @@ def get_path_length(path):
         res += abs(d)
 
     return res
+
+
+def get_gauge_field(lattice_sizes, N_gauge, seed):
+    with torch.random.fork_rng():
+        torch.manual_seed(seed)
+        return torch.stack(
+            [get_SUN_field(lattice_sizes, N_gauge) for _ in range(4)]
+        )
+
+
+def get_SUN_field(lattice_sizes, N_gauge):
+    # following https://arxiv.org/pdf/math-ph/0609050
+    X = torch.randn(*lattice_sizes, N_gauge, N_gauge, dtype=torch.cdouble)
+
+    Q, R = torch.linalg.qr(X)
+
+    d = torch.diagonal(Q, dim1=-2, dim2=-1)
+
+    ph = d / torch.abs(d)
+
+    Q = torch.einsum("abcdij,abcdj->abcdij", Q, ph)
+
+    det_Q = torch.linalg.det(Q)
+    Q /= det_Q.pow(1 / N_gauge).view(*Q.shape[:4], 1, 1).expand(Q.shape)
+
+    return Q
