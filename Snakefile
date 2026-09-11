@@ -83,6 +83,29 @@ rule train_seeded:
     shell:
         "python scripts/train.py --model {wildcards.model_name} --mass {wildcards.mass} --seed {wildcards.seed}"
 
+rule get_coefficients:
+    threads: 16
+    resources:
+        cores = 16
+    input:
+        "scripts/train.py",
+        "data/weights/weights_{model_name}_m{mass}.pt"
+    output:
+        "data/coefficients/coefficients_{model_name}_m{mass}.pt"
+    shell:
+        "python scripts/get_coefficients.py --model {wildcards.model_name} --mass {wildcards.mass}"
+
+rule get_coefficients_hopping:
+    threads: 16
+    resources:
+        cores = 16
+    input:
+        "scripts/train.py",
+    output:
+        "data/coefficients/coefficients_hopping_m{mass}.pt"
+    shell:
+        "python scripts/get_coefficients.py --mass {wildcards.mass}"
+
 rule plot_training_history:
     threads: 1
     resources:
@@ -322,9 +345,13 @@ rule plot_mass_dependence:
     input:
         "scripts/plot_mass_dependence_coefficients.py",
         lambda wildcards: expand(
-            "data/weights/weights_{layers}layers_{VOLUME}_{model_type}_m{mass}.pt",
+            "data/coefficients/coefficients_{layers}layers_{VOLUME}_{model_type}_m{mass}.pt",
             layers=wildcards.layers, VOLUME=VOLUME, model_type=wildcards.model_type, mass=MASSES
         ),
+        lambda wildcards: expand(
+            "data/coefficients/coefficients_hopping_m{mass}.pt",
+            mass=MASSES
+        )
     output:
         "plots/png/mass_dependence/mass_dependence_{layers}layers_{VOLUME}_{model_type}_pathlength{path_length}.png",
         "plots/pdf/mass_dependence/mass_dependence_{layers}layers_{VOLUME}_{model_type}_pathlength{path_length}.pdf"
@@ -337,7 +364,8 @@ rule plot_coefficients:
         cores = 16
     input:
         "scripts/plot_coefficients.py",
-        "data/weights/weights_{model_name}_m{mass}.pt"
+        "data/coefficients/coefficients_{model_name}_m{mass}.pt",
+        "data/coefficients/coefficients_hopping_m{mass}.pt"
     output:
         "plots/png/coefficients/coefficients_{model_name}_m{mass}.png",
         "plots/pdf/coefficients/coefficients_{model_name}_m{mass}.pdf",
@@ -352,7 +380,8 @@ rule plot_categories:
         cores = 16
     input:
         "scripts/plot_categories.py",
-        "data/weights/weights_{model_name}_m{mass}.pt"
+        "data/coefficients/coefficients_{model_name}_m{mass}.pt",
+        "data/coefficients/coefficients_hopping_m{mass}.pt"
     output:
         "plots/png/categories/categories_{model_name}_m{mass}.png",
         "plots/pdf/categories/categories_{model_name}_m{mass}.pdf",
@@ -368,9 +397,13 @@ rule plot_convergence_speed:
     input:
         "scripts/plot_convergence_speed.py",
         lambda wildcards: expand(
-            "data/weights/weights_{layers}layers_8c16_{model_type}_m{mass}.pt",
-            layers=LAYERS, model_type=MODEL_TYPES, mass=MASSES
+            "data/residuals/residuals_{layers}layers_{volume}_{model_type}_m{mass}.pt",
+            mass=MASSES, layers=LAYERS, volume=wildcards.volume, model_type=MODEL_TYPES
         ),
+        lambda wildcards: expand(
+            "data/residuals/residuals_{layers}steps_{volume}_hopping_m{mass}.pt",
+            mass=MASSES, layers=LAYERS, volume=wildcards.volume
+        )
     output:
         "plots/png/convergence/convergence_speed_{volume}.png",
         "plots/pdf/convergence/convergence_speed_{volume}.pdf"

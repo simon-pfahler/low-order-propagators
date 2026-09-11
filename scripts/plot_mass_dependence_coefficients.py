@@ -19,18 +19,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import torch
 from docopt import docopt
-from utility import (
-    consolidate_path,
-    generators,
-    get_coefficients,
-    get_coefficients_from_weights,
-    get_hopping_weights,
-    get_path_length,
-    get_weights_from_4x4,
-    get_weights_from_Clifford,
-    get_weights_from_restricted,
-    model_paths,
-)
+from utility import consolidate_path, generators, get_path_length, model_paths
 
 
 def extract_mass(filename):
@@ -65,11 +54,8 @@ path_length = int(args["--path_length"])
 masses = sorted(set(extract_mass(f) for f in os.listdir("data/weights")))
 
 # Get hopping coefficients for mass 1
-hopping_weights = get_hopping_weights(1, nlayers)
-hopping_coefficients = get_coefficients_from_weights(
-    hopping_weights,
-    path_length_min=path_length,
-    path_length_max=path_length,
+hopping_coefficients = torch.load(
+    f"data/coefficients/coefficients_hopping_m1.00.pt", weights_only=True
 )
 
 # get categories of paths:
@@ -105,19 +91,9 @@ category_names = [c[0] for c in categories] + ["zero"]
 
 scatter_points = [[[] for _ in masses] for _ in range(len(categories) + 1)]
 for mass_idx, mass in enumerate(masses):
-    weights = torch.load(
-        f"data/weights/weights_{nlayers}layers_{volume}_{model_type}_m{mass:.2f}.pt",
+    coefficients = torch.load(
+        f"data/coefficients/coefficients_{nlayers}layers_{volume}_{model_type}_m{mass:.2f}.pt",
         weights_only=True,
-    )
-    match model_type:
-        case "4x4":
-            weights = get_weights_from_4x4(weights)
-        case "restricted":
-            weights = get_weights_from_restricted(weights)
-        case "Clifford":
-            weights = get_weights_from_Clifford(weights)
-    coefficients = get_coefficients_from_weights(
-        weights, path_length_min=path_length, path_length_max=path_length
     )
 
     for k, v in coefficients.items():

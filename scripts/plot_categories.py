@@ -17,16 +17,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import torch
 from docopt import docopt
-from utility import (
-    canonicalize_path,
-    generator_mapping,
-    get_coefficients_from_weights,
-    get_hopping_weights,
-    get_path_length,
-    get_weights_from_4x4,
-    get_weights_from_Clifford,
-    get_weights_from_restricted,
-)
+from utility import canonicalize_path, generator_mapping, get_path_length
 
 matplotlib.use("Agg")
 
@@ -53,37 +44,16 @@ train_configs = model_json["train_configs"]
 test_configs = model_json["test_configs"]
 
 # Load weights and get coefficients
-weights_path = f"data/weights/weights_{model_name}_m{mass}.pt"
-if not os.path.exists(weights_path):
-    raise ValueError(
-        f"No weights file found for model '{model_name}' and mass={mass}"
-    )
-
-weights = torch.load(
-    f"data/weights/weights_{model_name}_m{mass}.pt",
-    weights_only=True,
-)
-match model_type:
-    case "4x4":
-        weights = get_weights_from_4x4(weights)
-    case "restricted":
-        weights = get_weights_from_restricted(weights)
-    case "Clifford":
-        weights = get_weights_from_Clifford(weights)
-
-coefficients = get_coefficients_from_weights(
-    weights, path_length_min=0, path_length_max=min(nlayers, 4)
+coefficients = torch.load(
+    f"data/coefficients/coefficients_{model_name}_m{mass}.pt", weights_only=True
 )
 
 for k, v in coefficients.items():
     coefficients[k] /= kappa ** get_path_length(k)
 
 # Get hopping coefficients
-hopping_weights = get_hopping_weights(float(mass), nlayers)
-hopping_coefficients = get_coefficients_from_weights(
-    hopping_weights,
-    path_length_min=0,
-    path_length_max=min(nlayers, 4),
+hopping_coefficients = torch.load(
+    f"data/coefficients/coefficients_hopping_m{mass}.pt", weights_only=True
 )
 
 for k, v in hopping_coefficients.items():
