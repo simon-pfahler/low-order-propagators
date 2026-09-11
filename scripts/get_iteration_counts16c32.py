@@ -85,6 +85,8 @@ for sample_idx in range(5):
 # Ensure output directory exists
 os.makedirs("data/iteration_counts", exist_ok=True)
 
+model_name = model_name.replace("8c16", "16c32")
+
 # Save output
 torch.save(
     iteration_counts,
