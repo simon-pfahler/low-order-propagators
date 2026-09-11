@@ -136,11 +136,11 @@ os.makedirs("plots/png/residuals/", exist_ok=True)
 os.makedirs("plots/pdf/residuals/", exist_ok=True)
 
 plt.savefig(
-    f"plots/png/residuals/residuals_vs_layers_m{mass:.2f}_{vol}.png",
+    f"plots/png/residuals/{path_prefix}_vs_layers_m{mass:.2f}_{vol}.png",
     dpi=300,
     bbox_inches="tight",
 )
 plt.savefig(
-    f"plots/pdf/residuals/residuals_vs_layers_m{mass:.2f}_{vol}.pdf",
+    f"plots/pdf/residuals/{path_prefix}_vs_layers_m{mass:.2f}_{vol}.pdf",
     bbox_inches="tight",
 )
