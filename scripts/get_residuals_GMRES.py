@@ -1,7 +1,7 @@
-"""Calculate residuals for the hopping expansion.
+"""Calculate residuals using GMRES.
 
 Usage:
-    get_residuals_hopping.py --nsteps=<n> --volume=<vol> --mass=<m> [--random]
+    get_residuals_GMRES.py --nsteps=<n> --volume=<vol> --mass=<m> [--random]
 
 Options:
     --nsteps=<n>            Number of steps in the hopping expansion
@@ -39,7 +39,7 @@ mass = float(args["--mass"])
 random = True if args["--random"] else False
 
 print(
-    f"Calculating residuals for hopping expansion with {nsteps} steps,"
+    f"Calculating residuals for GMRES with {nsteps} steps,"
     f"mass={mass:.2f}, volume {args['--volume']}"
 )
 
@@ -50,15 +50,11 @@ if mass == -4:
 
     residuals = torch.nan * torch.ones(4, 100)
 
-    outpath = (
-        f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
-    )
-    if random:
-        outpath = f"data/residuals/random_residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
-
     # Save output
-    torch.save(residuals, outpath)
-    quit()
+    torch.save(
+        residuals,
+        f"data/residuals/residuals_{nsteps}steps_{vol}_GMRES_m{mass:.2f}.pt",
+    )
 
 test_Us = [
     torch.load(get_config_path(lattice_size, c), weights_only=True)
@@ -69,22 +65,11 @@ if random:
 test_ws = [qcd_ml.qcd.dirac.dirac_wilson(U, mass) for U in test_Us]
 
 
-# Define Hopping expansion
-def hopping_expansion(v, w):
-    kappa = 1 / (w.mass_parameter + 4)
-
-    def H(x):
-        res = torch.zeros_like(x)
-        for mu in range(4):
-            res -= w.apply_pos_hop(x, mu)
-            res -= w.apply_neg_hop(x, mu)
-        return res
-
-    term = kappa * v
-    res = term.clone()
-    for _ in range(nsteps):
-        term = kappa * H(term)
-        res += term
+# Define GMRES
+def GMRES(v, w):
+    res, _ = qcd_ml.util.solver.GMRES(
+        w, v.clone(), torch.zeros_like(v), eps=1e-16, maxiter=nsteps
+    )
     return res
 
 
@@ -98,15 +83,15 @@ for sample_idx in range(100):
     v /= qcd_ml.util.linear_algebra.norm(v)
     for test_idx, w in enumerate(test_ws):
         residuals[test_idx, sample_idx] = (
-            residual(w, lambda x: hopping_expansion(x, w), v.clone()) ** 2
+            residual(w, lambda x: GMRES(x, w), v.clone()) ** 2
         )
 
 # Ensure output directory exists
 os.makedirs("data/residuals", exist_ok=True)
 
-outpath = f"data/residuals/residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
+outpath = f"data/residuals/residuals_{nsteps}steps_{vol}_GMRES_m{mass:.2f}.pt"
 if random:
-    outpath = f"data/residuals/random_residuals_{nsteps}steps_{vol}_hopping_m{mass:.2f}.pt"
+    outpath = f"data/residuals/random_residuals_{nsteps}steps_{vol}_GMRES_m{mass:.2f}.pt"
 
 # Save output
 torch.save(residuals, outpath)

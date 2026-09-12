@@ -48,6 +48,9 @@ nstepss_Clifford = []
 means_restricted = []
 stds_restricted = []
 nstepss_restricted = []
+means_GMRES = []
+stds_GMRES = []
+nstepss_GMRES = []
 
 # Find all nsteps
 nstepss = sorted(
@@ -80,6 +83,14 @@ for nsteps in nstepss:
         nstepss_restricted.append(nsteps)
         means_restricted.append(torch.mean(data))
         stds_restricted.append(torch.std(data))
+
+    # GMRES
+    gmres_path = f"data/residuals/{path_prefix}_{nsteps}steps_{vol}_GMRES_m{mass:.2f}.pt"
+    if os.path.exists(gmres_path):
+        data = torch.load(gmres_path, weights_only=True)
+        nstepss_GMRES.append(nsteps)
+        means_GMRES.append(torch.mean(data))
+        stds_GMRES.append(torch.std(data))
 
 # Create plot
 plt.figure(figsize=(10, 6))
@@ -116,6 +127,17 @@ plt.errorbar(
     marker="D",
     markerfacecolor="none",
     label="Restricted model",
+)
+plt.errorbar(
+    nstepss_GMRES,
+    means_GMRES,
+    yerr=stds_GMRES,
+    linestyle="none",
+    ecolor="red",
+    capsize=5,
+    marker="^",
+    markerfacecolor="none",
+    label="GMRES",
 )
 
 plt.xlabel("Number of steps/layers")

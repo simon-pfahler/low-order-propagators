@@ -1,12 +1,12 @@
 import numpy as np
 
 # >>> Parameters
-LAYERS = [1,2,3,4,6,8]
+LAYERS = [1,2,3,4,6,8,12]
 
 MODEL_TYPES=["Clifford", "restricted"]
 VOLUME="8c16"
 
-MASSES = [f"{m:.2f}" for m in sorted([round(float(m), 2) for m in np.arange(-3.8, 2.2, 0.2).tolist()] + [-0.9, -0.75, -0.7, -0.5])]
+MASSES = [f"{m:.2f}" for m in sorted([round(float(m), 2) for m in np.arange(-5, 2.2, 0.2).tolist()] + [-0.9, -0.75, -0.7, -0.5])]
 # <<< Parameters
 
 # >>> Helper functions
@@ -168,6 +168,17 @@ rule get_hopping_random_residuals:
     shell:
         "python scripts/get_residuals_hopping.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass} --random"
 
+rule get_GMRES_random_residuals:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        "scripts/get_residuals_GMRES.py"
+    output:
+        "data/residuals/random_residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt"
+    shell:
+        "python scripts/get_residuals_GMRES.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass} --random"
+
 rule get_model_residuals16c32:
     threads: 8
     resources:
@@ -202,6 +213,17 @@ rule get_hopping_residuals:
         "data/residuals/residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt"
     shell:
         "python scripts/get_residuals_hopping.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass}"
+
+rule get_GMRES_residuals:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        "scripts/get_residuals_GMRES.py"
+    output:
+        "data/residuals/residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt"
+    shell:
+        "python scripts/get_residuals_GMRES.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass}"
 
 rule get_model_iteration_counts16c32:
     threads: 8
@@ -251,6 +273,10 @@ rule plot_residuals_vs_layers:
         lambda wildcards: expand(
             "data/residuals/residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt",
             mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume
+        ),
+        lambda wildcards: expand(
+            "data/residuals/residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt",
+            mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume
         )
     output:
         "plots/png/residuals/residuals_vs_layers_m{mass}_{volume}.png",
@@ -270,6 +296,10 @@ rule plot_residuals:
         ),
         lambda wildcards: expand(
             "data/residuals/residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt",
+            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
+        ),
+        lambda wildcards: expand(
+            "data/residuals/residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt",
             mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
         )
     output:
@@ -291,6 +321,10 @@ rule plot_random_residuals_vs_layers:
         lambda wildcards: expand(
             "data/residuals/random_residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt",
             mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume
+        ),
+        lambda wildcards: expand(
+            "data/residuals/random_residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt",
+            mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume
         )
     output:
         "plots/png/residuals/random_residuals_vs_layers_m{mass}_{volume}.png",
@@ -310,6 +344,10 @@ rule plot_random_residuals:
         ),
         lambda wildcards: expand(
             "data/residuals/random_residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt",
+            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
+        ),
+        lambda wildcards: expand(
+            "data/residuals/random_residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt",
             mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
         )
     output:
@@ -402,6 +440,10 @@ rule plot_convergence_speed:
         ),
         lambda wildcards: expand(
             "data/residuals/residuals_{layers}steps_{volume}_hopping_m{mass}.pt",
+            mass=MASSES, layers=LAYERS, volume=wildcards.volume
+        ),
+        lambda wildcards: expand(
+            "data/residuals/residuals_{layers}steps_{volume}_GMRES_m{mass}.pt",
             mass=MASSES, layers=LAYERS, volume=wildcards.volume
         )
     output:

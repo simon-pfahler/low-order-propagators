@@ -44,6 +44,9 @@ masses_Clifford = []
 means_restricted = []
 stds_restricted = []
 masses_restricted = []
+means_GMRES = []
+stds_GMRES = []
+masses_GMRES = []
 
 # Find all masses
 masses = sorted(set(extract_mass(f) for f in os.listdir("data/residuals")))
@@ -74,6 +77,16 @@ for mass in masses:
         masses_restricted.append(mass)
         means_restricted.append(torch.mean(data))
         stds_restricted.append(torch.std(data))
+
+    # GMRES
+    gmres_path = (
+        f"data/residuals/{path_prefix}_{nsteps}steps_{vol}_GMRES_m{mass:.2f}.pt"
+    )
+    if os.path.exists(gmres_path):
+        data = torch.load(gmres_path, weights_only=True)
+        masses_GMRES.append(mass)
+        means_GMRES.append(torch.mean(data))
+        stds_GMRES.append(torch.std(data))
 
 # Create plot
 plt.figure(figsize=(10, 6))
@@ -111,6 +124,17 @@ plt.errorbar(
     markerfacecolor="none",
     label="Restricted model",
 )
+plt.errorbar(
+    masses_GMRES,
+    means_GMRES,
+    yerr=stds_GMRES,
+    linestyle="none",
+    ecolor="red",
+    capsize=5,
+    marker="^",
+    markerfacecolor="none",
+    label="GMRES",
+)
 
 plt.xlabel("Mass")
 plt.ylabel("Approximation Quality")
@@ -125,8 +149,8 @@ plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
 
 plt.ylim(
-    min(means_Clifford + means_restricted + means_hopping) / 1.3,
-    1.3 * max(means_Clifford + means_restricted),
+    min(means_Clifford + means_restricted + means_hopping + means_GMRES) / 1.3,
+    1.3 * max(means_Clifford + means_restricted + means_GMRES),
 )
 
 os.makedirs("plots/png/residuals/", exist_ok=True)

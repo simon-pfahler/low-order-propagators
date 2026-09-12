@@ -66,6 +66,9 @@ factors_Clifford_err = []
 masses_restricted = []
 factors_restricted = []
 factors_restricted_err = []
+masses_GMRES = []
+factors_GMRES = []
+factors_GMRES_err = []
 
 # Find all masses
 masses = sorted(set(extract_mass(f) for f in os.listdir("data/residuals")))
@@ -129,6 +132,25 @@ for mass in masses:
         factors_restricted.append(b)
         factors_restricted_err.append(b_err)
 
+    # GMRES
+    gmres_points = []
+    for nsteps in sorted(
+        set(extract_layers_or_steps(f) for f in os.listdir("data/residuals"))
+    ):
+        path = f"data/residuals/residuals_{nsteps}steps_{vol}_GMRES_m{mass:.2f}.pt"
+        if os.path.exists(path):
+            data = torch.load(path, weights_only=True)
+            mean = float(torch.mean(data))
+            sem = float(torch.std(data) / np.sqrt(data.numel()))
+            gmres_points.append((nsteps, mean, sem))
+
+    if len(gmres_points) >= 2:
+        ns, ms, ss = zip(*gmres_points)
+        b, b_err = fit_convergence_factor(ns, ms, ss)
+        masses_GMRES.append(mass)
+        factors_GMRES.append(b)
+        factors_GMRES_err.append(b_err)
+
 # Create plot
 plt.figure(figsize=(10, 6))
 
@@ -164,6 +186,17 @@ plt.errorbar(
     markerfacecolor="none",
     capsize=3,
     label="Restricted model",
+)
+plt.errorbar(
+    masses_GMRES,
+    factors_GMRES,
+    yerr=factors_GMRES_err,
+    linestyle="none",
+    color="red",
+    marker="^",
+    markerfacecolor="none",
+    capsize=3,
+    label="GMRES",
 )
 
 plt.xlabel("Mass")
