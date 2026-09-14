@@ -96,6 +96,12 @@ plt.savefig(
     bbox_inches="tight",
 )
 
+nrpaths = min(
+    coefficients_matrix.shape[0], hopping_coefficients_matrix.shape[0]
+)
+coefficients_matrix = coefficients_matrix[:nrpaths]
+hopping_coefficients_matrix = hopping_coefficients_matrix[:nrpaths]
+
 diff = (coefficients_matrix - hopping_coefficients_matrix).abs()
 diff = torch.max(diff, 1e-5 * torch.ones_like(diff))
 

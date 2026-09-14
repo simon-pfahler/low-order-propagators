@@ -195,6 +195,12 @@ plt.savefig(
     bbox_inches="tight",
 )
 
+nrpaths = min(
+    coefficients_matrix_means.shape[0],
+    hopping_coefficients_matrix_means.shape[0],
+)
+coefficients_matrix_means = coefficients_matrix_means[:nrpaths]
+hopping_coefficients_matrix_means = hopping_coefficients_matrix_means[:nrpaths]
 
 diff = (coefficients_matrix_means - hopping_coefficients_matrix_means).abs()
 diff = torch.max(diff, 1e-5 * torch.ones_like(diff))
