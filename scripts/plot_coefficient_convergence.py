@@ -105,7 +105,8 @@ plt.plot(
     linestyle="None",
     label=f"{model_type} model",
 )
-plt.axhline(hopping_coefficient.real, label=f"Hopping expansion", c="red")
+if show_hopping:
+    plt.axhline(hopping_coefficient.real, label=f"Hopping expansion", c="red")
 
 plt.grid()
 plt.legend()
