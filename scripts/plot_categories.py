@@ -52,9 +52,13 @@ for k, v in coefficients.items():
     coefficients[k] /= kappa ** get_path_length(k)
 
 # Get hopping coefficients
-hopping_coefficients = torch.load(
-    f"data/coefficients/coefficients_hopping_m{mass}.pt", weights_only=True
-)
+hopping_coefficients = {
+    k: v
+    for k, v in torch.load(
+        f"data/coefficients/coefficients_hopping_m{mass}.pt", weights_only=True
+    ).items()
+    if get_path_length(k) <= nlayers
+}
 
 for k, v in hopping_coefficients.items():
     hopping_coefficients[k] /= kappa ** get_path_length(k)
@@ -194,13 +198,6 @@ plt.savefig(
     f"plots/pdf/categories/categories_{model_name}_m{mass}.pdf",
     bbox_inches="tight",
 )
-
-nrpaths = min(
-    coefficients_matrix_means.shape[0],
-    hopping_coefficients_matrix_means.shape[0],
-)
-coefficients_matrix_means = coefficients_matrix_means[:nrpaths]
-hopping_coefficients_matrix_means = hopping_coefficients_matrix_means[:nrpaths]
 
 diff = (coefficients_matrix_means - hopping_coefficients_matrix_means).abs()
 diff = torch.max(diff, 1e-5 * torch.ones_like(diff))

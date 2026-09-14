@@ -51,12 +51,22 @@ nlayers = int(args["--nlayers"])
 path_length = int(args["--path_length"])
 
 # Find all masses
-masses = sorted(set(extract_mass(f) for f in os.listdir("data/weights")))
+masses = sorted(
+    set(
+        extract_mass(f)
+        for f in os.listdir("data/weights")
+        if not f.startswith("seeded")
+    )
+)
 
 # Get hopping coefficients for mass 1
-hopping_coefficients = torch.load(
-    f"data/coefficients/coefficients_hopping_m1.00.pt", weights_only=True
-)
+hopping_coefficients = {
+    k: v
+    for k, v in torch.load(
+        f"data/coefficients/coefficients_hopping_m1.00.pt", weights_only=True
+    ).items()
+    if get_path_length(k) == path_length
+}
 
 # get categories of paths:
 # First, match different directions, then deal with rotations
@@ -91,10 +101,14 @@ category_names = [c[0] for c in categories] + ["zero"]
 
 scatter_points = [[[] for _ in masses] for _ in range(len(categories) + 1)]
 for mass_idx, mass in enumerate(masses):
-    coefficients = torch.load(
-        f"data/coefficients/coefficients_{nlayers}layers_{volume}_{model_type}_m{mass:.2f}.pt",
-        weights_only=True,
-    )
+    coefficients = {
+        k: v
+        for k, v in torch.load(
+            f"data/coefficients/coefficients_{nlayers}layers_{volume}_{model_type}_m{mass:.2f}.pt",
+            weights_only=True,
+        ).items()
+        if get_path_length(k) == path_length
+    }
 
     for k, v in coefficients.items():
         hopping_v = hopping_coefficients[k]
@@ -108,14 +122,14 @@ for mass_idx, mass in enumerate(masses):
 
 plt.figure(figsize=(10, 6))
 ymin = 0
-ymax = 1e3
+ymax = 0
 for idx in range(len(scatter_points)):
     s = torch.tensor(scatter_points[idx])
     m = torch.tensor(masses).unsqueeze(-1).expand(s.shape)
     if s.numel() == 0:
         continue
     if idx != len(scatter_points) - 1:
-        ymax = min(ymax, torch.max(s).item())
+        ymax = max(ymax, torch.max(s).item())
     plt.scatter(m, s, label=category_names[idx])
 
 for factor in range(path_length):

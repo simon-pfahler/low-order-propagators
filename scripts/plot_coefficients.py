@@ -17,6 +17,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import torch
 from docopt import docopt
+from utility import get_path_length
 
 matplotlib.use("Agg")
 
@@ -47,15 +48,23 @@ if not os.path.exists(weights_path):
         f"No weights file found for model '{model_name}' and mass={mass}"
     )
 
-coefficients = torch.load(
-    f"data/coefficients/coefficients_{model_name}_m{mass}.pt",
-    weights_only=True,
-)
+coefficients = {
+    k: v
+    for k, v in torch.load(
+        f"data/coefficients/coefficients_{model_name}_m{mass}.pt",
+        weights_only=True,
+    ).items()
+    if get_path_length(k) <= 2
+}
 
 # Get hopping coefficients
-hopping_coefficients = torch.load(
-    f"data/coefficients/coefficients_hopping_m{mass}.pt", weights_only=True
-)
+hopping_coefficients = {
+    k: v
+    for k, v in torch.load(
+        f"data/coefficients/coefficients_hopping_m{mass}.pt", weights_only=True
+    ).items()
+    if get_path_length(k) <= min(2, nlayers)
+}
 
 # Create plots
 os.makedirs("plots/png/coefficients", exist_ok=True)
@@ -95,12 +104,6 @@ plt.savefig(
     f"plots/pdf/coefficients/coefficients_{model_name}_m{mass}.pdf",
     bbox_inches="tight",
 )
-
-nrpaths = min(
-    coefficients_matrix.shape[0], hopping_coefficients_matrix.shape[0]
-)
-coefficients_matrix = coefficients_matrix[:nrpaths]
-hopping_coefficients_matrix = hopping_coefficients_matrix[:nrpaths]
 
 diff = (coefficients_matrix - hopping_coefficients_matrix).abs()
 diff = torch.max(diff, 1e-5 * torch.ones_like(diff))

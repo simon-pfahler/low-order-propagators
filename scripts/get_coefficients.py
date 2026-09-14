@@ -27,7 +27,6 @@ sys.path.insert(0, "scripts")
 args = docopt(__doc__)
 model_name = args["--model"]
 mass = args["--mass"]
-kappa = 1 / (2 * (float(mass) + 4))
 
 if model_name:
     weights = torch.load(
