@@ -38,6 +38,8 @@ def extract_layers_or_steps(filename):
 
 def fit_convergence_factor(nsteps, means, sigmas):
     """Fit r(n) = A * b^n via weighted log-linear regression."""
+    if np.any(np.isnan(means)):
+        return torch.nan, torch.nan
     nsteps = np.asarray(nsteps, dtype=float)
     means = np.asarray(means, dtype=float)
     sigmas = np.asarray(sigmas, dtype=float)
@@ -137,7 +139,9 @@ for mass in masses:
     for nsteps in sorted(
         set(extract_layers_or_steps(f) for f in os.listdir("data/residuals"))
     ):
-        path = f"data/residuals/residuals_{nsteps}steps_{vol}_GMRES_m{mass:.2f}.pt"
+        path = (
+            f"data/residuals/residuals_{nsteps}steps_{vol}_GMRES_m{mass:.2f}.pt"
+        )
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
             mean = float(torch.mean(data))

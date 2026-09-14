@@ -2,11 +2,14 @@ import numpy as np
 
 # >>> Parameters
 LAYERS = [1,2,3,4,6,8,12]
+SEEDED_LAYERS=[1,2,3,4]
 
 MODEL_TYPES=["Clifford", "restricted"]
 VOLUME="8c16"
 
-MASSES = [f"{m:.2f}" for m in sorted([round(float(m), 2) for m in np.arange(-5, 2.2, 0.2).tolist()] + [-0.9, -0.75, -0.7, -0.5])]
+MASSES = [f"{m:.2f}" for m in sorted([round(float(m), 2) for m in np.arange(-5, 2, 0.2).tolist()] + [-0.9, -0.75, -0.7, -0.5])]
+SEEDED_MASSES_RESTRICTED = ["-1.00", "-0.75", "-0.50", "0.00", "0.50", "1.00", "1.50", "2.00"]
+SEEDED_MASSES_CLIFFORD = ["-5.00", "-4.50", "-4.00", "-3.50", "-3.00", "-2.50", "-2.00", "-1.50", "-1.00"]
 # <<< Parameters
 
 # >>> Helper functions
@@ -54,8 +57,10 @@ rule all:
         expand("plots/png/convergence/convergence_speed_{volume}.png", volume=[VOLUME, "16c32"]),
         expand("plots/pdf/convergence/convergence_speed_{volume}.pdf", volume=[VOLUME, "16c32"]),
         # Extra seeded trainings
-        expand("data/weights/seeded_weights_{layers}layers_8c16_restricted_m1.00_seed{seed}.pt", layers=LAYERS, seed=range(5)),
-        expand("data/histories/seeded_history_{layers}layers_8c16_restricted_m1.00_seed{seed}.txt", layers=LAYERS, seed=range(5))
+        expand("data/weights/seeded_weights_{layers}layers_8c16_restricted_m{mass}_seed{seed}.pt", mass=SEEDED_MASSES_RESTRICTED, layers=SEEDED_LAYERS, seed=range(5)),
+        expand("data/histories/seeded_history_{layers}layers_8c16_restricted_m{mass}_seed{seed}.txt", mass=SEEDED_MASSES_RESTRICTED, layers=SEEDED_LAYERS, seed=range(5)),
+        expand("data/weights/seeded_weights_{layers}layers_8c16_Clifford_m{mass}_seed{seed}.pt", mass=SEEDED_MASSES_CLIFFORD, layers=SEEDED_LAYERS, seed=range(5)),
+        expand("data/histories/seeded_history_{layers}layers_8c16_Clifford_m{mass}_seed{seed}.txt", mass=SEEDED_MASSES_CLIFFORD, layers=SEEDED_LAYERS, seed=range(5))
 
 rule train:
     threads: 8
