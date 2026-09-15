@@ -4,7 +4,7 @@ from qcd_ml.nn.pt import v_PT
 from utility import generators
 
 
-class Model_4x4(torch.nn.Module):
+class Model_HL(torch.nn.Module):
     def __init__(self, nlayers, paths):
         super().__init__()
         self.paths = paths
@@ -50,7 +50,7 @@ class Model_4x4(torch.nn.Module):
         return res
 
 
-class Model_Clifford(torch.nn.Module):
+class Model_HC(torch.nn.Module):
     def __init__(self, nlayers, paths):
         super().__init__()
         self.paths = paths

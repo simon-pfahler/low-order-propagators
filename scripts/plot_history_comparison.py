@@ -1,12 +1,13 @@
-"""Plot training history for comparison between Clifford and 4x4 models.
+"""Plot training history for comparison between HC and HL models.
 
 Usage:
-    plot_history_comparsion.py --layers=<n> --volume=<vol> --mass=<m>
+    plot_history_comparsion.py --layers=<n> --action=<name> --lattice_size=<str> --mass=<m>
 
 Options:
-    --layers=<n>    Number of layers
-    --volume=<vol>  Volume string
-    --mass=<m>      Mass parameter value
+    --layers=<n>            Number of layers
+    --action=<name>         Action name ("WilsonQuenched", "WilsonDynamic" or "Haar")
+    --lattice_size=<str>    Lattice size string (e.g. "8c16")
+    --mass=<mass>           Mass parameter value
 """
 
 import os
@@ -50,70 +51,61 @@ sys.path.insert(0, "scripts")
 # Parse docopt arguments
 args = docopt(__doc__)
 layers = args["--layers"]
-vol = args["--volume"]
+action = args["--action"]
+lattice_size_str = args["--lattice_size"]
 mass = args["--mass"]
 
-history_path_Clifford = (
-    f"data/histories/history_{layers}layers_{vol}_Clifford_m{mass}.txt"
-)
-if not os.path.exists(history_path_Clifford):
+history_path_HC = f"data/histories/history_{layers}layers_{action}_{lattice_size_str}_HC_m{mass}.txt"
+if not os.path.exists(history_path_HC):
     raise ValueError(
-        f"No history file found for model '{layers}layers_{vol}_Clifford' and mass={mass}"
+        f"No history file found for model '{layers}layers_{action}_{lattice_size_str}_HC' and mass={mass}"
     )
-history_path_4x4 = (
-    f"data/histories/history_{layers}layers_{vol}_4x4_m{mass}.txt"
-)
-if not os.path.exists(history_path_4x4):
+history_path_HL = f"data/histories/history_{layers}layers_{action}_{lattice_size_str}_HL_m{mass}.txt"
+if not os.path.exists(history_path_HL):
     raise ValueError(
-        f"No history file found for model '{layers}layers_{vol}_4x4' and mass={mass}"
+        f"No history file found for model '{layers}layers_{action}_{lattice_size_str}_HL' and mass={mass}"
     )
 
 
 (
-    iterations_Clifford,
-    train_costs_Clifford,
-    test_costs_Clifford,
-    test_iterations_Clifford,
-) = parse_history_file(history_path_Clifford)
+    iterations_HC,
+    train_costs_HC,
+    test_costs_HC,
+    test_iterations_HC,
+) = parse_history_file(history_path_HC)
 (
-    iterations_4x4,
-    train_costs_4x4,
-    test_costs_4x4,
-    test_iterations_4x4,
-) = parse_history_file(history_path_4x4)
+    iterations_HL,
+    train_costs_HL,
+    test_costs_HL,
+    test_iterations_HL,
+) = parse_history_file(history_path_HL)
 
 # Create plot
 plt.figure(figsize=(10, 6))
 plt.plot(
-    iterations_Clifford,
-    train_costs_Clifford,
+    iterations_HC,
+    train_costs_HC,
     "b-",
-    label="Clifford model",
+    label="HC model",
     linewidth=1,
 )
-plt.scatter(test_iterations_Clifford, test_costs_Clifford, color="b", s=10)
-plt.plot(iterations_4x4, train_costs_4x4, "r-", label="4x4 model", linewidth=1)
-plt.scatter(test_iterations_4x4, test_costs_4x4, color="r", s=10)
+plt.scatter(test_iterations_HC, test_costs_HC, color="b", s=10)
+plt.plot(iterations_HL, train_costs_HL, "r-", label="HL model", linewidth=1)
+plt.scatter(test_iterations_HL, test_costs_HL, color="r", s=10)
 
 plt.xlabel("Iteration")
 plt.ylabel("Cost")
 plt.title(
-    f"Training History for {layers} layers, {vol}, mass={mass}\n"
-    f"Clifford vs 4x4 Model"
+    f"Training History for {layers} layers, {action} {lattice_size_str}, mass={mass}\n"
+    f"HC vs HL Model"
 )
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.yscale("log")
 
-os.makedirs("plots/png/histories", exist_ok=True)
-os.makedirs("plots/pdf/histories", exist_ok=True)
+os.makedirs("plots/histories", exist_ok=True)
 
 plt.savefig(
-    f"plots/png/histories/history_comparison_{layers}layers_{vol}_m{mass}.png",
-    dpi=300,
-    bbox_inches="tight",
-)
-plt.savefig(
-    f"plots/pdf/histories/history_comparison_{layers}layers_{vol}_m{mass}.pdf",
+    f"plots/histories/history_comparison_{layers}layers_{action}_{lattice_size_str}_m{mass}.pdf",
     bbox_inches="tight",
 )

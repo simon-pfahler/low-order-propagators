@@ -1,3 +1,5 @@
+import json
+import math
 from copy import deepcopy
 
 import torch
@@ -100,29 +102,29 @@ def get_hopping_weights(mass, nlayers):
     return hopping_weights
 
 
-def get_weights_from_Clifford(weights_dict_Clifford):
-    """Transform Clifford model weights to generic format."""
+def get_weights_from_HC(weights_dict_HC):
+    """Transform HC model weights to generic format."""
     weights = dict()
 
-    for n in range(len(weights_dict_Clifford)):
-        weights[f"weights.{n}"] = weights_dict_Clifford[f"weights.{n}"]
+    for n in range(len(weights_dict_HC)):
+        weights[f"weights.{n}"] = weights_dict_HC[f"weights.{n}"]
         weights[f"weights.{n}"][0, 0, 0] += 1
 
     return weights
 
 
-def get_weights_from_4x4(weights_dict_4x4):
-    """Transform 4x4 model weights to generic format."""
+def get_weights_from_HL(weights_dict_HL):
+    """Transform HL model weights to generic format."""
     weights = dict()
 
-    for n in range(len(weights_dict_4x4)):
+    for n in range(len(weights_dict_HL)):
         weights[f"weights.{n}"] = torch.zeros(
-            *weights_dict_4x4[f"weights.{n}"].shape[:2], 16, dtype=torch.cdouble
+            *weights_dict_HL[f"weights.{n}"].shape[:2], 16, dtype=torch.cdouble
         )
         for i in range(weights[f"weights.{n}"].shape[0]):
             for o in range(weights[f"weights.{n}"].shape[1]):
                 weights[f"weights.{n}"][i, o] = get_coefficients(
-                    weights_dict_4x4[f"weights.{n}"][i, o]
+                    weights_dict_HL[f"weights.{n}"][i, o]
                 )
         weights[f"weights.{n}"][0, 0, 0] += 1
 
@@ -168,9 +170,19 @@ def get_weights_from_restricted(weights_dict_restricted):
     return weights
 
 
-def get_config_path(lattice_size, config):
+def get_config_paths(action, lattice_size_str, test=False):
     """Get the path to a gauge config, given its parameters."""
-    return f"configs/{lattice_size[0]}c{lattice_size[3]}/{config}.pt"
+    with open("parameters.json", "r") as f:
+        parameters = json.load(f)
+
+    config_string = "train_configs"
+    if test:
+        config_string = "test_configs"
+
+    return [
+        f"configs/{action}/{lattice_size_str}/{config}.pt"
+        for config in parameters[action][lattice_size_str][config_string]
+    ]
 
 
 def consolidate_path(path):
@@ -322,3 +334,51 @@ def get_SUN_field(lattice_sizes, N_gauge):
     Q /= det_Q.pow(1 / N_gauge).view(*Q.shape[:4], 1, 1).expand(Q.shape)
 
     return Q
+
+
+def format_pdg(mean, std):
+    """Format (mean, std) in particle physics notation.
+
+    e.g. 3.27(8)e-3 means (3.27 +/- 0.08)e-3, where the bracketed
+    number is the uncertainty in the last displayed digit(s).
+    Uses 2 significant figures for the uncertainty when the leading
+    digit is 1 or 2, otherwise 1 significant figure (PDG convention).
+    """
+    if std == 0:
+        if mean == 0:
+            return "0", True
+        exp = math.floor(math.log10(abs(mean)))
+        norm = mean / 10**exp
+        s = f"{norm:.2f}"
+        return f"{s}e{exp:+d}" if exp != 0 else s, False
+
+    std_exp = math.floor(math.log10(std))
+    std_norm = round(std / 10**std_exp, 10)
+
+    if std_norm < 3:
+        last_digit_exp = std_exp - 1
+    else:
+        last_digit_exp = std_exp
+
+    scale = 10**last_digit_exp
+
+    if mean == 0:
+        exp = last_digit_exp
+    else:
+        exp = math.floor(math.log10(abs(mean)))
+        if exp < last_digit_exp:
+            exp = last_digit_exp
+
+    decimals = exp - last_digit_exp
+
+    mean_rounded = round(mean / scale)
+    std_rounded = math.ceil(std / scale)
+    zero = abs(mean_rounded) <= std_rounded
+
+    mean_rounded *= scale
+
+    mean_norm = mean_rounded / 10**exp
+    result = f"{mean_norm:.{decimals}f}({int(std_rounded)})"
+    if exp != 0:
+        result += f"e{exp:+d}"
+    return result, zero

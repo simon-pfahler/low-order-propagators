@@ -1,102 +1,50 @@
 """Print the formula obtained from restricted model weights.
 
 Usage:
-    print_formula_restricted.py --model=<name> --mass=<mass>
+    print_formula_restricted.py --layers=<n> --action=<name>  --lattice_size=<str> --mass=<mass>
 
 Options:
-    --model=<name>          Name of the model json file (in `models/{name}.json`)
+    --layers=<n>            Number of layers
+    --action=<name>         Action name ("WilsonQuenched", "WilsonDynamic" or "Haar")
+    --lattice_size=<str>    Lattice size string (e.g. "8c16")
     --mass=<mass>           Mass parameter value
 """
 
 import json
-import math
 import os
 import sys
 
 import docopt
 import torch
 from docopt import docopt
-
-
-def format_pdg(mean, std):
-    """Format (mean, std) in particle physics notation.
-
-    e.g. 3.27(8)e-3 means (3.27 +/- 0.08)e-3, where the bracketed
-    number is the uncertainty in the last displayed digit(s).
-    Uses 2 significant figures for the uncertainty when the leading
-    digit is 1 or 2, otherwise 1 significant figure (PDG convention).
-    """
-    if std == 0:
-        if mean == 0:
-            return "0"
-        exp = math.floor(math.log10(abs(mean)))
-        norm = mean / 10**exp
-        s = f"{norm:.2f}"
-        return f"{s}e{exp:+d}" if exp != 0 else s
-
-    std_exp = math.floor(math.log10(std))
-    std_norm = round(std / 10**std_exp, 10)
-
-    if std_norm < 3:
-        last_digit_exp = std_exp - 1
-    else:
-        last_digit_exp = std_exp
-
-    scale = 10**last_digit_exp
-
-    if mean == 0:
-        exp = last_digit_exp
-    else:
-        exp = math.floor(math.log10(abs(mean)))
-        if exp < last_digit_exp:
-            exp = last_digit_exp
-
-    decimals = exp - last_digit_exp
-
-    mean_rounded = round(mean / scale) * scale
-    std_rounded = round(std / scale)
-
-    mean_norm = mean_rounded / 10**exp
-    result = f"{mean_norm:.{decimals}f}({int(std_rounded)})"
-    if exp != 0:
-        result += f"e{exp:+d}"
-    return result
-
-
-sys.path.insert(0, "scripts")
+from utility import format_pdg
 
 # Parse docopt arguments
 args = docopt(__doc__)
-model_name = args["--model"]
+layers = int(args["--layers"])
+model_type = "restricted"
+action = args["--action"]
+lattice_size_str = args["--lattice_size"]
 mass = args["--mass"]
 
-nrseed = 5
+nrseeds = 5
 
-# Load model json
-model_json_path = f"models/{model_name}.json"
-with open(model_json_path, "r") as f:
-    model_json = json.load(f)
-nlayers = model_json["nlayers"]
+model_name = f"{layers}layers_{action}_{lattice_size_str}_{model_type}"
 
 # Load weights and get coefficients
-weights_paths = [
-    f"data/weights/seeded_weights_{model_name}_m{mass}_seed{seed}.pt"
-    for seed in range(nrseed)
-]
-
 weightss = [
     torch.load(
         f"data/weights/seeded_weights_{model_name}_m{mass}_seed{seed}.pt",
         weights_only=True,
     )
-    for seed in range(nrseed)
+    for seed in range(nrseeds)
 ]
 
 overall_factors = torch.stack([w["overall_factor"] for w in weightss])
 layer_weights = torch.stack([w["weights"] for w in weightss])
 
-for seed in range(nrseed):
-    for l in range(nlayers):
+for seed in range(nrseeds):
+    for l in range(layers):
         layer = layer_weights[seed][l]
         all_angles = layer.angle()
         angle = torch.mean(all_angles)
@@ -139,7 +87,7 @@ layer_weights_std = torch.std(layer_weights.real.to(torch.double), dim=0)
 print(
     f"Overall factor: {format_pdg(overall_factor_mean.item(), overall_factor_std.item())}"
 )
-for l in range(nlayers):
+for l in range(layers):
     m0 = format_pdg(
         layer_weights_mean[l, 0].item(), layer_weights_std[l, 0].item()
     )

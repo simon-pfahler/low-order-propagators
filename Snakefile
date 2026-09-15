@@ -1,15 +1,16 @@
 import numpy as np
 
 # >>> Parameters
-LAYERS = [1,2,3,4,6,8,12]
-SEEDED_LAYERS=[1,2,3,4]
+LAYERS = [1,2,3,4,6,8]
 
-MODEL_TYPES=["Clifford", "restricted"]
+ALL_MODEL_TYPES=["HC", "HL", "restricted"]
+MODEL_TYPES=["HC", "restricted"]
 VOLUME="8c16"
 
-MASSES = [f"{m:.2f}" for m in sorted([round(float(m), 2) for m in np.arange(-5, 2, 0.2).tolist()] + [-0.9, -0.75, -0.7, -0.5])]
-SEEDED_MASSES_RESTRICTED = ["-1.00", "-0.75", "-0.50", "0.00", "0.50", "1.00", "1.50", "2.00"]
-SEEDED_MASSES_CLIFFORD = ["-5.00", "-4.50", "-4.00", "-3.50", "-3.00", "-2.50", "-2.00", "-1.50", "-1.00"]
+MASSES = [f"{m:.2f}" for m in np.arange(-5, 2.2, 0.2)]
+
+SEEDED_LAYERS=[1,2,3,4]
+SEEDED_MASSES = [f"{m:.2f}" for m in range(-5,3)]
 # <<< Parameters
 
 # >>> Helper functions
@@ -19,440 +20,396 @@ for model_type in MODEL_TYPES:
         MODEL_NAMES.append(f"{layer}layers_{VOLUME}_{model_type}")
 # <<< Helper functions
 
-rule all:
+# >>> Global wildcard constraints
+wildcard_constraints:
+    layers=r"\d+",
+# <<< Global wildcard constraints
+
+# >>> Rules to aggregate results
+rule train_main:
     input:
-        # Training history plots
-        expand("plots/png/histories/history_{model_name}_m{mass}.png", model_name=MODEL_NAMES, mass=MASSES),
-        expand("plots/pdf/histories/history_{model_name}_m{mass}.pdf", model_name=MODEL_NAMES, mass=MASSES),
-        # Training history comparison plots
-        expand("plots/png/histories/history_comparison_{layers}layers_8c16_m-0.75.png", layers=LAYERS),
-        expand("plots/pdf/histories/history_comparison_{layers}layers_8c16_m-0.75.pdf", layers=LAYERS),
-        # Coefficients plots
-        expand("plots/png/coefficients/coefficients_{model_name}_m{mass}.png", model_name=MODEL_NAMES, mass=MASSES),
-        expand("plots/pdf/coefficients/coefficients_{model_name}_m{mass}.pdf", model_name=MODEL_NAMES, mass=MASSES),
-        expand("plots/png/coefficients/comparison_hopping_{model_name}_m{mass}.png", model_name=MODEL_NAMES, mass=MASSES),
-        expand("plots/pdf/coefficients/comparison_hopping_{model_name}_m{mass}.pdf", model_name=MODEL_NAMES, mass=MASSES),
-        # Categories plots
-        expand("plots/png/categories/categories_{model_name}_m{mass}.png", model_name=MODEL_NAMES, mass=MASSES),
-        expand("plots/pdf/categories/categories_{model_name}_m{mass}.pdf", model_name=MODEL_NAMES, mass=MASSES),
-        expand("plots/png/categories/comparison_hopping_{model_name}_m{mass}.png", model_name=MODEL_NAMES, mass=MASSES),
-        expand("plots/pdf/categories/comparison_hopping_{model_name}_m{mass}.pdf", model_name=MODEL_NAMES, mass=MASSES),
-        # Residuals plots
-        expand("plots/png/residuals/residuals_{nsteps}steps_{volume}.png", nsteps=LAYERS, volume=[VOLUME, "16c32"]),
-        expand("plots/pdf/residuals/residuals_{nsteps}steps_{volume}.pdf", nsteps=LAYERS, volume=[VOLUME, "16c32"]),
-        expand("plots/png/residuals/residuals_vs_layers_m{mass}_{volume}.png", mass=MASSES, volume=[VOLUME, "16c32"]),
-        expand("plots/pdf/residuals/residuals_vs_layers_m{mass}_{volume}.pdf", mass=MASSES, volume=[VOLUME, "16c32"]),
-        # Residuals plots for random gauge fields
-        expand("plots/png/residuals/random_residuals_{nsteps}steps_{volume}.png", nsteps=LAYERS, volume=[VOLUME, "16c32"]),
-        expand("plots/pdf/residuals/random_residuals_{nsteps}steps_{volume}.pdf", nsteps=LAYERS, volume=[VOLUME, "16c32"]),
-        expand("plots/png/residuals/random_residuals_vs_layers_m{mass}_{volume}.png", mass=MASSES, volume=[VOLUME, "16c32"]),
-        expand("plots/pdf/residuals/random_residuals_vs_layers_m{mass}_{volume}.pdf", mass=MASSES, volume=[VOLUME, "16c32"]),
-        # Iteration count plots
-        expand("plots/png/iteration_counts/iteration_counts_{nsteps}steps_{volume}.png", nsteps=LAYERS, volume=[VOLUME, "16c32"]),
-        expand("plots/pdf/iteration_counts/iteration_counts_{nsteps}steps_{volume}.pdf", nsteps=LAYERS, volume=[VOLUME, "16c32"]),
-        # Mass dependence plots
-        expand(f"plots/png/mass_dependence/mass_dependence_{{layers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.png", layers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
-        expand(f"plots/pdf/mass_dependence/mass_dependence_{{layers}}layers_{VOLUME}_{{model_type}}_pathlength{{path_length}}.pdf", layers=LAYERS, model_type=MODEL_TYPES, path_length=list(range(5))),
-        # Convergence speed plots
-        expand("plots/png/convergence/convergence_speed_{volume}.png", volume=[VOLUME, "16c32"]),
-        expand("plots/pdf/convergence/convergence_speed_{volume}.pdf", volume=[VOLUME, "16c32"]),
-        # Extra seeded trainings
-        expand("data/weights/seeded_weights_{layers}layers_8c16_restricted_m{mass}_seed{seed}.pt", mass=SEEDED_MASSES_RESTRICTED, layers=SEEDED_LAYERS, seed=range(5)),
-        expand("data/histories/seeded_history_{layers}layers_8c16_restricted_m{mass}_seed{seed}.txt", mass=SEEDED_MASSES_RESTRICTED, layers=SEEDED_LAYERS, seed=range(5)),
-        expand("data/weights/seeded_weights_{layers}layers_8c16_Clifford_m{mass}_seed{seed}.pt", mass=SEEDED_MASSES_CLIFFORD, layers=SEEDED_LAYERS, seed=range(5)),
-        expand("data/histories/seeded_history_{layers}layers_8c16_Clifford_m{mass}_seed{seed}.txt", mass=SEEDED_MASSES_CLIFFORD, layers=SEEDED_LAYERS, seed=range(5))
+        expand(
+            "data/weights/weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
+            layers=LAYERS,
+            action="WilsonQuenched",
+            lattice_size="8c16",
+            model_type=MODEL_TYPES,
+            mass=MASSES,
+        ),
+
+rule train_seeded_main:
+    input:
+        expand(
+            "data/weights/seeded_weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}_seed{seed}.pt",
+            layers=SEEDED_LAYERS,
+            action="WilsonQuenched",
+            lattice_size="8c16",
+            model_type=MODEL_TYPES,
+            mass=SEEDED_MASSES,
+            seed=range(5),
+        ),
+
+rule train_action_dependence:
+    input:
+        expand(
+            "data/weights/weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
+            layers=[2,4],
+            action=["WilsonQuenched", "WilsonDynamic", "Haar"],
+            lattice_size="8c16",
+            model_type=MODEL_TYPES,
+            mass=MASSES,
+        )
+
+rule Qs_main:
+    input:
+        expand(
+            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=LAYERS,
+            action="WilsonQuenched",
+            lattice_size="16c32",
+            model_action="WilsonQuenched",
+            model_lattice_size="8c16",
+            type=[*MODEL_TYPES],
+            mass=MASSES,
+        ),
+        expand(
+            "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=LAYERS,
+            type=["hopping", "GMRES"],
+            action="WilsonQuenched",
+            lattice_size="16c32",
+            mass=MASSES,
+        ),
+
+rule Qs_volume_dependence:
+    input:
+        expand(
+            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=3,
+            action="WilsonQuenched",
+            lattice_size=["8c16", "16c32"],
+            model_action="WilsonQuenched",
+            model_lattice_size="8c16",
+            type=MODEL_TYPES,
+            mass=MASSES,
+        ),
+
+rule Qs_action_dependence:
+    input:
+        expand(
+            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=[2,4],
+            action=["WilsonQuenched", "WilsonDynamic", "Haar"],
+            lattice_size="8c16",
+            model_action=["WilsonQuenched", "Haar"],
+            model_lattice_size="8c16",
+            type=MODEL_TYPES,
+            mass=MASSES,
+        ),
+
+rule coefficients_main:
+    input:
+        expand(
+            "data/coefficients/coefficients_{layers}layers_{model_action}_{model_lattice_size}_{type}_m{mass}.pt",
+            layers=LAYERS,
+            model_action="WilsonQuenched",
+            model_lattice_size="8c16",
+            type=MODEL_TYPES,
+            mass=MASSES,
+        ),
+        expand(
+            "data/coefficients/coefficients_{layers}layers_{type}_m{mass}.pt",
+            layers=4,
+            type="hopping",
+            mass=MASSES,
+        ),
+
+rule plot_Q_mass_dependence_main:
+    input:
+        expand(
+            "plots/Qs/Qs_{layers}layers_WilsonQuenched_16c32_WilsonQuenched_8c16.pdf",
+            layers=LAYERS,
+        ),
+
+rule plot_Q_layer_dependence_main:
+    input:
+        expand(
+            "plots/Qs/Qs_vs_layers_WilsonQuenched_16c32_WilsonQuenched_8c16_m{mass}.pdf",
+            mass=MASSES,
+        ),
+
+rule plot_Q_mass_dependence_volume_dependence:
+    input:
+        expand(
+            "plots/Qs/Qs_3layers_WilsonQuenched_{lattice_size}_WilsonQuenched_8c16.pdf",
+            lattice_size=["8c16", "16c32"],
+        ),
+
+rule plot_Q_mass_dependence_action_dependence:
+    input:
+        expand(
+            "plots/Qs/Qs_{layers}layers_{action}_8c16_{model_action}_8c16.pdf",
+            layers=[2,4],
+            action=["WilsonQuenched", "WilsonDynamic", "Haar"],
+            model_action=["WilsonQuenched", "WilsonDynamic", "Haar"],
+        ),
+
+rule plot_coefficients_mass_dependence_main:
+    input:
+        expand(
+            "plots/mass_dependence/mass_dependence_{layers}layers_{model_type}_{action}_{lattice_size}_pathlength{path_length}.pdf",
+            layers=LAYERS,
+            model_type=MODEL_TYPES,
+            action="WilsonQuenched",
+            lattice_size="8c16",
+            path_length=range(5),
+        )
+
+rule plot_history_comparison_main:
+    input:
+        expand(
+            "plots/histories/history_comparison_{layers}layers_WilsonQuenched_8c16_m-0.8.pdf",
+            layers=LAYERS,
+        ),
+
+rule plot_convergence_rate_main:
+    input:
+        "plots/pdf/convergence/convergence_rate_WilsonQuenched_16c32_WilsonQuenched_8c16.pdf",
+
+rule plot_coefficient_vs_layers_main:
+    input:
+        expand(
+            "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
+            model_type=["HC", "restricted"],
+            action="WilsonQuenched",
+            lattice_size="8c16",
+            path="[]",
+            gamma_index=[0],
+            mass=MASSES,
+        ),
+        expand(
+            "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
+            model_type=["HC", "restricted"],
+            action="WilsonQuenched",
+            lattice_size="8c16",
+            path=["[(0,1)]", "[(0,2)]"],
+            gamma_index=[0,1],
+            mass=MASSES,
+        ),
+        expand(
+            "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
+            model_type=["HC", "restricted"],
+            action="WilsonQuenched",
+            lattice_size="8c16",
+            path="[(0,1),(1,1)]",
+            gamma_index=[0,1,2],
+            mass=MASSES,
+        ),
+# <<< Rules to aggregate results
 
 rule train:
     threads: 8
     resources:
         cores = 8
-    input:
-        "scripts/train.py",
-        "models/{model_name}.json"
     output:
-        "data/weights/weights_{model_name}_m{mass}.pt",
-        "data/histories/history_{model_name}_m{mass}.txt"
+        "data/weights/weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
+        "data/histories/history_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.txt",
     shell:
-        "python scripts/train.py --model {wildcards.model_name} --mass {wildcards.mass}"
+        "python scripts/train.py --layers={wildcards.layers} --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
 rule train_seeded:
     threads: 8
     resources:
         cores = 8
-    input:
-        "scripts/train.py",
-        "models/{model_name}.json"
     output:
-        "data/weights/seeded_weights_{model_name}_m{mass}_seed{seed}.pt",
-        "data/histories/seeded_history_{model_name}_m{mass}_seed{seed}.txt"
+        "data/weights/seeded_weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}_seed{seed}.pt",
+        "data/histories/seeded_history_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}_seed{seed}.txt",
     shell:
-        "python scripts/train.py --model {wildcards.model_name} --mass {wildcards.mass} --seed {wildcards.seed}"
+        "python scripts/train.py --layers={wildcards.layers} --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass} --seed={wildcards.seed}"
 
-rule get_coefficients:
+rule get_Qs_model:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        lambda wildcards:
+            "data/weights/weights_{layers}layers_{model_action}_{model_lattice_size}_{type}_m{mass}.pt" if wildcards.type in ALL_MODEL_TYPES else []
+    output:
+        "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
+    wildcard_constraints:
+        type="HC|HL|restricted",
+    shell:
+        "python scripts/get_approximation_quality.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size} --mass={wildcards.mass}"
+
+rule get_Qs_baseline:
+    threads: 8
+    resources:
+        cores = 8
+    output:
+        "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt"
+    wildcard_constraints:
+        type="hopping|GMRES",
+    shell:
+        "python scripts/get_approximation_quality.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
+
+rule get_coefficients_model:
     threads: 16
     resources:
         cores = 16
     input:
-        "scripts/train.py",
-        "data/weights/weights_{model_name}_m{mass}.pt"
+        "data/weights/weights_{layers}layers_{action}_{lattice_size}_{type}_m{mass}.pt"
     output:
-        "data/coefficients/coefficients_{model_name}_m{mass}.pt"
+        "data/coefficients/coefficients_{layers}layers_{action}_{lattice_size}_{type}_m{mass}.pt"
+    wildcard_constraints:
+        type="HC|HL|restricted",
     shell:
-        "python scripts/get_coefficients.py --model {wildcards.model_name} --mass {wildcards.mass}"
+        "python scripts/get_coefficients.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
 rule get_coefficients_hopping:
-    threads: 16
+    threads: lambda wildcards: 2 * int(wildcards.layers)
     resources:
-        cores = 16
-    input:
-        "scripts/train.py",
+        cores = lambda wildcards: 2 * int(wildcards.layers)
     output:
-        "data/coefficients/coefficients_hopping_m{mass}.pt"
+        "data/coefficients/coefficients_{layers}layers_{type}_m{mass}.pt"
+    wildcard_constraints:
+        type="hopping",
     shell:
-        "python scripts/get_coefficients.py --mass {wildcards.mass}"
+        "python scripts/get_coefficients.py --layers={wildcards.layers} --type={wildcards.type} --mass={wildcards.mass}"
 
-rule plot_training_history:
+rule plot_Q_mass_dependence:
     threads: 1
     resources:
         cores = 1
     input:
-        "scripts/plot_history.py",
-        "data/histories/history_{model_name}_m{mass}.txt"
+        lambda wildcards: expand(
+            "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=wildcards.layers,
+            type=["hopping", "GMRES"],
+            action=wildcards.action,
+            lattice_size=wildcards.lattice_size,
+            mass=MASSES,
+        ),
+        lambda wildcards: expand(
+            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=wildcards.layers,
+            type=MODEL_TYPES,
+            model_action=wildcards.model_action,
+            model_lattice_size=wildcards.model_lattice_size,
+            action=wildcards.action,
+            lattice_size=wildcards.lattice_size,
+            mass=MASSES,
+        ),
     output:
-        "plots/png/histories/history_{model_name}_m{mass}.png",
-        "plots/pdf/histories/history_{model_name}_m{mass}.pdf"
+        "plots/Qs/Qs_{layers}layers_{action}_{lattice_size}_{model_action}_{model_lattice_size}.pdf",
     shell:
-        "python scripts/plot_history.py --model {wildcards.model_name} --mass {wildcards.mass}"
+        "python scripts/plot_approximation_quality.py --layers={wildcards.layers} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size}"
+
+rule plot_Q_layer_dependence:
+    threads: 1
+    resources:
+        cores = 1
+    input:
+        lambda wildcards: expand(
+            "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=LAYERS,
+            type=["hopping", "GMRES"],
+            action=wildcards.action,
+            lattice_size=wildcards.lattice_size,
+            mass=wildcards.mass,
+        ),
+        lambda wildcards: expand(
+            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=LAYERS,
+            type=MODEL_TYPES,
+            model_action=wildcards.model_action,
+            model_lattice_size=wildcards.model_lattice_size,
+            action=wildcards.action,
+            lattice_size=wildcards.lattice_size,
+            mass=wildcards.mass,
+        ),
+    output:
+        "plots/Qs/Qs_vs_layers_{action}_{lattice_size}_{model_action}_{model_lattice_size}_m{mass}.pdf",
+    shell:
+        "python scripts/plot_approximation_quality_vs_layers.py --mass={wildcards.mass} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size}"
+    
+rule plot_mass_dependence_coefficients:
+    threads: 1
+    resources:
+        cores = 1
+    input:
+        lambda wildcards: expand(
+            "data/coefficients/coefficients_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
+            layers=LAYERS,
+            action=wildcards.model_action,
+            lattice_size=wildcards.model_lattice_size,
+            model_type=wildcards.model_type,
+            mass=MASSES,
+        ),
+        "data/coefficients/coefficients_4layers_hopping_m1.00.pt",
+    output:
+        "plots/mass_dependence/mass_dependence_{layers}layers_{model_type}_{action}_{lattice_size}_pathlength{path_length}.pdf",
+    shell:
+        "python scripts/plot_mass_dependence_coefficients.py --layers={wildcards.layers} --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --path_length={wildcards.path_length}"
+
+rule plot_convergence_rate:
+    threads: 4
+    resources:
+        cores = 4
+    input:
+        lambda wildcards: expand(
+            "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=LAYERS,
+            type=["hopping", "GMRES"],
+            action=wildcards.action,
+            lattice_size=wildcards.lattice_size,
+            mass=MASSES,
+        ),
+        lambda wildcards: expand(
+            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
+            layers=LAYERS,
+            type=MODEL_TYPES,
+            model_action=wildcards.model_action,
+            model_lattice_size=wildcards.model_lattice_size,
+            action=wildcards.action,
+            lattice_size=wildcards.lattice_size,
+            mass=MASSES,
+        ),
+    output:
+        "plots/pdf/convergence/convergence_rate_{action}_{lattice_size}_{model_action}_{model_lattice_size}.pdf",
+    shell:
+        "python plot_convergence_rate.py --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size}"
 
 rule plot_history_comparison:
     threads: 1
     resources:
         cores = 1
     input:
-        "scripts/plot_history_comparison.py",
-        "data/histories/history_{layers}layers_{vol}_Clifford_m{mass}.txt",
-        "data/histories/history_{layers}layers_{vol}_4x4_m{mass}.txt"
+        "data/histories/history_{layers}layers_{action}_{lattice_size}_HC_m{mass}.txt",
+        "data/histories/history_{layers}layers_{action}_{lattice_size}_HL_m{mass}.txt",
     output:
-        "plots/png/histories/history_comparison_{layers}layers_{vol}_m{mass}.png",
-        "plots/pdf/histories/history_comparison_{layers}layers_{vol}_m{mass}.pdf"
+        "plots/histories/history_comparison_{layers}layers_{action}_{lattice_size}_m{mass}.pdf",
     shell:
-        "python scripts/plot_history_comparison.py --layers {wildcards.layers} --volume {wildcards.vol} --mass {wildcards.mass}"
+        "python scripts/plot_history_comparsion.py --layers={wildcards.layers} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
-rule get_model_random_residuals16c32:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_residuals16c32.py",
-        "data/weights/weights_{nsteps}layers_8c16_{model_type}_m{mass}.pt"
-    output:
-        "data/residuals/random_residuals_{nsteps}layers_16c32_{model_type}_m{mass}.pt"
-    shell:
-        "python scripts/get_residuals16c32.py --model {wildcards.nsteps}layers_8c16_{wildcards.model_type} --mass {wildcards.mass} --random"
-
-rule get_model_random_residuals:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_residuals.py",
-        "data/weights/weights_{model_name}_m{mass}.pt"
-    output:
-        "data/residuals/random_residuals_{model_name}_m{mass}.pt"
-    shell:
-        "python scripts/get_residuals.py --model {wildcards.model_name} --mass {wildcards.mass} --random"
-
-rule get_hopping_random_residuals:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_residuals_hopping.py"
-    output:
-        "data/residuals/random_residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt"
-    shell:
-        "python scripts/get_residuals_hopping.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass} --random"
-
-rule get_GMRES_random_residuals:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_residuals_GMRES.py"
-    output:
-        "data/residuals/random_residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt"
-    shell:
-        "python scripts/get_residuals_GMRES.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass} --random"
-
-rule get_model_residuals16c32:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_residuals16c32.py",
-        "data/weights/weights_{nsteps}layers_8c16_{model_type}_m{mass}.pt"
-    output:
-        "data/residuals/residuals_{nsteps}layers_16c32_{model_type}_m{mass}.pt"
-    shell:
-        "python scripts/get_residuals16c32.py --model {wildcards.nsteps}layers_8c16_{wildcards.model_type} --mass {wildcards.mass}"
-
-rule get_model_residuals:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_residuals.py",
-        "data/weights/weights_{model_name}_m{mass}.pt"
-    output:
-        "data/residuals/residuals_{model_name}_m{mass}.pt"
-    shell:
-        "python scripts/get_residuals.py --model {wildcards.model_name} --mass {wildcards.mass}"
-
-rule get_hopping_residuals:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_residuals_hopping.py"
-    output:
-        "data/residuals/residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt"
-    shell:
-        "python scripts/get_residuals_hopping.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass}"
-
-rule get_GMRES_residuals:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_residuals_GMRES.py"
-    output:
-        "data/residuals/residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt"
-    shell:
-        "python scripts/get_residuals_GMRES.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass}"
-
-rule get_model_iteration_counts16c32:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_iteration_counts16c32.py",
-        "data/weights/weights_{nsteps}layers_8c16_{model_type}_m{mass}.pt"
-    output:
-        "data/iteration_counts/iteration_counts_{nsteps}layers_16c32_{model_type}_m{mass}.pt"
-    shell:
-        "python scripts/get_iteration_counts16c32.py --model {wildcards.nsteps}layers_8c16_{wildcards.model_type} --mass {wildcards.mass}"
-
-rule get_model_iteration_counts:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_iteration_counts.py",
-        "data/weights/weights_{model_name}_m{mass}.pt"
-    output:
-        "data/iteration_counts/iteration_counts_{model_name}_m{mass}.pt"
-    shell:
-        "python scripts/get_iteration_counts.py --model {wildcards.model_name} --mass {wildcards.mass}"
-
-rule get_hopping_iteration_counts:
-    threads: 8
-    resources:
-        cores = 8
-    input:
-        "scripts/get_iteration_counts_hopping.py"
-    output:
-        "data/iteration_counts/iteration_counts_{nsteps}steps_{volume}_hopping_m{mass}.pt"
-    shell:
-        "python scripts/get_iteration_counts_hopping.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --mass {wildcards.mass}"
-
-rule plot_residuals_vs_layers:
+rule plot_coefficient_vs_layers:
     threads: 1
     resources:
         cores = 1
     input:
-        "scripts/plot_residuals_vs_layers.py",
         lambda wildcards: expand(
-            "data/residuals/residuals_{nsteps}layers_{volume}_{model_type}_m{mass}.pt",
-            mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume, model_type=MODEL_TYPES
+            "data/coefficients/coefficients_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
+            layers=LAYERS,
+            action=wildcards.action,
+            lattice_size=wildcards.lattice_size,
+            model_type=wildcards.model_type,
+            mass=wildcards.mass,
         ),
         lambda wildcards: expand(
-            "data/residuals/residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt",
-            mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume
+            "data/coefficients/coefficients_4layers_{model_type}_m{mass}.pt",
+            model_type=wildcards.model_type,
+            mass=wildcards.mass,
         ),
-        lambda wildcards: expand(
-            "data/residuals/residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt",
-            mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume
-        )
     output:
-        "plots/png/residuals/residuals_vs_layers_m{mass}_{volume}.png",
-        "plots/pdf/residuals/residuals_vs_layers_m{mass}_{volume}.pdf"
+        "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
     shell:
-        "python scripts/plot_residuals_vs_layers.py --mass {wildcards.mass} --volume {wildcards.volume}"
-
-rule plot_residuals:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        "scripts/plot_residuals.py",
-        lambda wildcards: expand(
-            "data/residuals/residuals_{nsteps}layers_{volume}_{model_type}_m{mass}.pt",
-            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume, model_type=MODEL_TYPES
-        ),
-        lambda wildcards: expand(
-            "data/residuals/residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt",
-            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
-        ),
-        lambda wildcards: expand(
-            "data/residuals/residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt",
-            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
-        )
-    output:
-        "plots/png/residuals/residuals_{nsteps}steps_{volume}.png",
-        "plots/pdf/residuals/residuals_{nsteps}steps_{volume}.pdf"
-    shell:
-        "python scripts/plot_residuals.py --nsteps {wildcards.nsteps} --volume {wildcards.volume}"
-
-rule plot_random_residuals_vs_layers:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        "scripts/plot_residuals_vs_layers.py",
-        lambda wildcards: expand(
-            "data/residuals/random_residuals_{nsteps}layers_{volume}_{model_type}_m{mass}.pt",
-            mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume, model_type=MODEL_TYPES
-        ),
-        lambda wildcards: expand(
-            "data/residuals/random_residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt",
-            mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume
-        ),
-        lambda wildcards: expand(
-            "data/residuals/random_residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt",
-            mass=wildcards.mass, nsteps=LAYERS, volume=wildcards.volume
-        )
-    output:
-        "plots/png/residuals/random_residuals_vs_layers_m{mass}_{volume}.png",
-        "plots/pdf/residuals/random_residuals_vs_layers_m{mass}_{volume}.pdf"
-    shell:
-        "python scripts/plot_residuals_vs_layers.py --mass {wildcards.mass} --volume {wildcards.volume} --random"
-
-rule plot_random_residuals:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        "scripts/plot_residuals.py",
-        lambda wildcards: expand(
-            "data/residuals/random_residuals_{nsteps}layers_{volume}_{model_type}_m{mass}.pt",
-            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume, model_type=MODEL_TYPES
-        ),
-        lambda wildcards: expand(
-            "data/residuals/random_residuals_{nsteps}steps_{volume}_hopping_m{mass}.pt",
-            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
-        ),
-        lambda wildcards: expand(
-            "data/residuals/random_residuals_{nsteps}steps_{volume}_GMRES_m{mass}.pt",
-            mass=MASSES, nsteps=wildcards.nsteps, volume=wildcards.volume
-        )
-    output:
-        "plots/png/residuals/random_residuals_{nsteps}steps_{volume}.png",
-        "plots/pdf/residuals/random_residuals_{nsteps}steps_{volume}.pdf"
-    shell:
-        "python scripts/plot_residuals.py --nsteps {wildcards.nsteps} --volume {wildcards.volume} --random"
-
-rule plot_iteration_counts:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        "scripts/plot_iteration_counts.py",
-        lambda wildcards: expand(
-            "data/iteration_counts/iteration_counts_{nsteps}layers_{volume}_{model_type}_m{mass}.pt",
-            mass=[m for m in MASSES if float(m) >= -0.75], nsteps=wildcards.nsteps, volume=wildcards.volume, model_type=MODEL_TYPES
-        ),
-        lambda wildcards: expand(
-            "data/iteration_counts/iteration_counts_{nsteps}steps_{volume}_hopping_m{mass}.pt",
-            mass=[m for m in MASSES if float(m) >= -0.75], nsteps=wildcards.nsteps, volume=wildcards.volume
-        )
-    output:
-        "plots/png/iteration_counts/iteration_counts_{nsteps}steps_{volume}.png",
-        "plots/pdf/iteration_counts/iteration_counts_{nsteps}steps_{volume}.pdf"
-    shell:
-        "python scripts/plot_iteration_counts.py --nsteps {wildcards.nsteps} --volume {wildcards.volume}"
-
-rule plot_mass_dependence:
-    threads: 16
-    resources:
-        cores = 16
-    input:
-        "scripts/plot_mass_dependence_coefficients.py",
-        lambda wildcards: expand(
-            "data/coefficients/coefficients_{layers}layers_{VOLUME}_{model_type}_m{mass}.pt",
-            layers=wildcards.layers, VOLUME=VOLUME, model_type=wildcards.model_type, mass=MASSES
-        ),
-        lambda wildcards: expand(
-            "data/coefficients/coefficients_hopping_m{mass}.pt",
-            mass=MASSES
-        )
-    output:
-        "plots/png/mass_dependence/mass_dependence_{layers}layers_{VOLUME}_{model_type}_pathlength{path_length}.png",
-        "plots/pdf/mass_dependence/mass_dependence_{layers}layers_{VOLUME}_{model_type}_pathlength{path_length}.pdf"
-    shell:
-        "python scripts/plot_mass_dependence_coefficients.py --model_type {wildcards.model_type} --volume {VOLUME} --layers {wildcards.layers} --path_length {wildcards.path_length}"
-
-rule plot_coefficients:
-    threads: 16
-    resources:
-        cores = 16
-    input:
-        "scripts/plot_coefficients.py",
-        "data/coefficients/coefficients_{model_name}_m{mass}.pt",
-        "data/coefficients/coefficients_hopping_m{mass}.pt"
-    output:
-        "plots/png/coefficients/coefficients_{model_name}_m{mass}.png",
-        "plots/pdf/coefficients/coefficients_{model_name}_m{mass}.pdf",
-        "plots/png/coefficients/comparison_hopping_{model_name}_m{mass}.png",
-        "plots/pdf/coefficients/comparison_hopping_{model_name}_m{mass}.pdf"
-    shell:
-        "python scripts/plot_coefficients.py --model {wildcards.model_name} --mass {wildcards.mass}"
-
-rule plot_categories:
-    threads: 16
-    resources:
-        cores = 16
-    input:
-        "scripts/plot_categories.py",
-        "data/coefficients/coefficients_{model_name}_m{mass}.pt",
-        "data/coefficients/coefficients_hopping_m{mass}.pt"
-    output:
-        "plots/png/categories/categories_{model_name}_m{mass}.png",
-        "plots/pdf/categories/categories_{model_name}_m{mass}.pdf",
-        "plots/png/categories/comparison_hopping_{model_name}_m{mass}.png",
-        "plots/pdf/categories/comparison_hopping_{model_name}_m{mass}.pdf"
-    shell:
-        "python scripts/plot_categories.py --model {wildcards.model_name} --mass {wildcards.mass}"
-
-rule plot_convergence_speed:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        "scripts/plot_convergence_speed.py",
-        lambda wildcards: expand(
-            "data/residuals/residuals_{layers}layers_{volume}_{model_type}_m{mass}.pt",
-            mass=MASSES, layers=LAYERS, volume=wildcards.volume, model_type=MODEL_TYPES
-        ),
-        lambda wildcards: expand(
-            "data/residuals/residuals_{layers}steps_{volume}_hopping_m{mass}.pt",
-            mass=MASSES, layers=LAYERS, volume=wildcards.volume
-        ),
-        lambda wildcards: expand(
-            "data/residuals/residuals_{layers}steps_{volume}_GMRES_m{mass}.pt",
-            mass=MASSES, layers=LAYERS, volume=wildcards.volume
-        )
-    output:
-        "plots/png/convergence/convergence_speed_{volume}.png",
-        "plots/pdf/convergence/convergence_speed_{volume}.pdf"
-    shell:
-        "python scripts/plot_convergence_speed.py --volume {wildcards.volume}"
+        "plot_coefficient_vs_layers.py --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass} --path={wildcards.path} --gamma_index={wildcards.gamma_index}"

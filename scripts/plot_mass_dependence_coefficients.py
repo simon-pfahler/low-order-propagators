@@ -1,13 +1,14 @@
 """Plot the mass dependence of coefficients for length-n paths.
 
 Usage:
-    plot_mass_dependence_coefficients.py --model_type=<type> --volume=<vol> --nlayers=<n> --path_length=<n>
+    plot_mass_dependence_coefficients.py --layers=<n> --model_type=<type> --action=<name> --lattice_size=<str> --path_length=<n>
 
 Options:
-    --model_type=<type>     Model type: 'Clifford' or 'restricted'
-    --volume=<vol>          Volume string
-    --nlayers=<n>           Number of layers
-    --path_length=<n>       Length of the paths to create the plot for
+    --layers=<n>                Number of layers of the model, or number of steps of the hopping expansion/GMRES
+    --model_type=<name>         Model type ("HC", "HL", "restricted"), "hopping" or "GMRES"
+    --action=<name>       Action the model was trained on
+    --lattice_size=<str>  Lattice size the model was trained on
+    --path_length=<n>           Length of the paths to create the plot for
 """
 
 import os
@@ -43,11 +44,12 @@ sys.path.insert(0, "scripts")
 
 # Parse docopt arguments
 args = docopt(__doc__)
-model_type = args["--model_type"]
-volume = args["--volume"]
-if model_type not in ["Clifford", "restricted"]:
-    raise ValueError(f"Model type '{model_type}' not supported!")
-nlayers = int(args["--nlayers"])
+layers = int(args["--layers"])
+model_type = args["--type"]
+if model_type not in ["restricted", "HL", "HC"]:
+    raise ValueError(f"Type '{model_type}' not supported!")
+action = args["--action"]
+lattice_size_str = args["--lattice_size"]
 path_length = int(args["--path_length"])
 
 # Find all masses
@@ -63,7 +65,8 @@ masses = sorted(
 hopping_coefficients = {
     k: v
     for k, v in torch.load(
-        f"data/coefficients/coefficients_hopping_m1.00.pt", weights_only=True
+        f"data/coefficients/coefficients_4layers_hopping_m1.00.pt",
+        weights_only=True,
     ).items()
     if get_path_length(k) == path_length
 }
@@ -104,7 +107,7 @@ for mass_idx, mass in enumerate(masses):
     coefficients = {
         k: v
         for k, v in torch.load(
-            f"data/coefficients/coefficients_{nlayers}layers_{volume}_{model_type}_m{mass:.2f}.pt",
+            f"data/coefficients/coefficients_{layers}layers_{action}_{lattice_size_str}_{model_type}_m{mass}.pt",
             weights_only=True,
         ).items()
         if get_path_length(k) == path_length
@@ -150,21 +153,15 @@ plt.ylabel("Absolute value of coefficient")
 plt.ylim(ymin, 1.1 * ymax)
 plt.title(
     f"Dependence of coefficients on mass parameter\n"
-    f"for {nlayers} layers, {volume}, {model_type}\n"
+    f"for {layers} layers, {action} {lattice_size_str}, {model_type}\n"
     f"Coefficients for paths of length {path_length}"
 )
 plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
 
-os.makedirs("plots/png/mass_dependence", exist_ok=True)
-os.makedirs("plots/pdf/mass_dependence", exist_ok=True)
+os.makedirs("plots/mass_dependence", exist_ok=True)
 
 plt.savefig(
-    f"plots/png/mass_dependence/mass_dependence_{nlayers}layers_{volume}_{model_type}_pathlength{path_length}.png",
-    dpi=300,
-    bbox_inches="tight",
-)
-plt.savefig(
-    f"plots/pdf/mass_dependence/mass_dependence_{nlayers}layers_{volume}_{model_type}_pathlength{path_length}.pdf",
+    f"plots/mass_dependence/mass_dependence_{layers}layers_{model_type}_{action}_{lattice_size_str}_pathlength{path_length}.pdf",
     bbox_inches="tight",
 )
