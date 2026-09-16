@@ -20,7 +20,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 import torch
 from docopt import docopt
-from utility import consolidate_path, generators, get_path_length, model_paths
+from utility import (
+    canonicalize_path,
+    consolidate_path,
+    generators,
+    get_path_length,
+    model_paths,
+)
 
 
 def extract_mass(filename):
@@ -45,9 +51,9 @@ sys.path.insert(0, "scripts")
 # Parse docopt arguments
 args = docopt(__doc__)
 layers = int(args["--layers"])
-model_type = args["--type"]
+model_type = args["--model_type"]
 if model_type not in ["restricted", "HL", "HC"]:
-    raise ValueError(f"Type '{model_type}' not supported!")
+    raise ValueError(f"Model type '{model_type}' not supported!")
 action = args["--action"]
 lattice_size_str = args["--lattice_size"]
 path_length = int(args["--path_length"])
@@ -56,7 +62,7 @@ path_length = int(args["--path_length"])
 masses = sorted(
     set(
         extract_mass(f)
-        for f in os.listdir("data/weights")
+        for f in os.listdir("data/coefficients")
         if not f.startswith("seeded")
     )
 )
@@ -71,53 +77,37 @@ hopping_coefficients = {
     if get_path_length(k) == path_length
 }
 
-# get categories of paths:
-# First, match different directions, then deal with rotations
-categories_raw = list()
-for k, v in hopping_coefficients.items():
-    cat_idx = None
-    for idx, category in enumerate(categories_raw):
-        if torch.all(
-            torch.abs(v) == torch.abs(hopping_coefficients[category[0]])
-        ):
-            cat_idx = idx
-            break
-    if cat_idx is None:
-        categories_raw.append([k])
-    else:
-        categories_raw[cat_idx].append(k)
-
-categories_raw_lengths = []
-for c in categories_raw:
-    if len(c) not in categories_raw_lengths:
-        categories_raw_lengths.append(len(c))
-categories = [[] for _ in range(len(categories_raw_lengths))]
-for c in categories_raw:
-    idx = categories_raw_lengths.index(len(c))
-    categories[idx].extend(c)
+# get categories of paths
+categories = list(
+    set(tuple(canonicalize_path(k)[0]) for k in hopping_coefficients.keys())
+)
 category_index = dict()
 for i, c in enumerate(categories):
     for e in c:
         category_index[tuple(e)] = i
 
-category_names = [c[0] for c in categories] + ["zero"]
+category_names = categories + ["zero"]
 
 scatter_points = [[[] for _ in masses] for _ in range(len(categories) + 1)]
 for mass_idx, mass in enumerate(masses):
-    coefficients = {
-        k: v
-        for k, v in torch.load(
-            f"data/coefficients/coefficients_{layers}layers_{action}_{lattice_size_str}_{model_type}_m{mass}.pt",
-            weights_only=True,
-        ).items()
-        if get_path_length(k) == path_length
-    }
+    try:
+        coefficients = {
+            k: v
+            for k, v in torch.load(
+                f"data/coefficients/coefficients_{layers}layers_{action}_{lattice_size_str}_{model_type}_m{mass:.2f}.pt",
+                weights_only=True,
+            ).items()
+            if get_path_length(k) == path_length
+        }
+    except:
+        continue
 
     for k, v in coefficients.items():
+        ck = tuple(canonicalize_path(k)[0])
         hopping_v = hopping_coefficients[k]
         for i in range(16):
             if hopping_v[i] != 0:
-                scatter_points[category_index[tuple(k)]][mass_idx].append(
+                scatter_points[categories.index(ck)][mass_idx].append(
                     torch.abs(v[i])
                 )
             else:

@@ -115,7 +115,7 @@ for i in range(16):
             c += f", {ci}i"
         print(f"Coefficient of gamma structure {i}: {c}")
 
-print(f"HC-Model")
+print(f"{model_type} Model")
 for i in range(16):
     cr, zr = format_pdg(
         can_coef_mean[i].real.item(), can_coef_std_real[i].item()

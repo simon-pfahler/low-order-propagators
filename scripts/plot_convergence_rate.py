@@ -1,4 +1,4 @@
-"""Plot the convergence speed of the residuals as a function of mass.
+"""Plot the convergence rate of the Qs as a function of mass.
 
 Usage:
     plot_convergence_rate.py --action=<name> --lattice_size=<str> --model_action=<name> --model_lattice_size=<str>
@@ -27,14 +27,12 @@ def extract_mass(filename):
     return mass
 
 
-def extract_layers_or_steps(filename):
+def extract_layers(filename):
     try:
-        layers = int(
-            re.search(r"residuals_(\d+)(?:steps|layers)", filename).group(1)
-        )
+        layers = int(re.search(r"Qs_(\d+)layers", filename).group(1))
     except:
         raise ValueError(
-            f"Number of layers/steps not extractable from filename '{filename}'!"
+            f"Number of layers not extractable from filename '{filename}'!"
         )
     return layers
 
@@ -81,13 +79,11 @@ factors_GMRES_err = []
 # Find all masses
 masses = sorted(set(extract_mass(f) for f in os.listdir("data/Qs")))
 
-# For each mass, gather residuals across all available steps/layers and fit
+# For each mass, gather Qs across all available steps/layers and fit
 for mass in masses:
     # Hopping expansion
     hopping_points = []
-    for layers in sorted(
-        set(extract_layers_or_steps(f) for f in os.listdir("data/Qs"))
-    ):
+    for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
         path = f"data/Qs/Qs_{layers}layers_hopping_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
@@ -104,9 +100,7 @@ for mass in masses:
 
     # GMRES
     gmres_points = []
-    for layers in sorted(
-        set(extract_layers_or_steps(f) for f in os.listdir("data/Qs"))
-    ):
+    for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
         path = f"data/Qs/Qs_{layers}layers_GMRES_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
@@ -123,9 +117,7 @@ for mass in masses:
 
     # HC model
     hc_points = []
-    for layers in sorted(
-        set(extract_layers_or_steps(f) for f in os.listdir("data/Qs"))
-    ):
+    for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
         path = f"data/Qs/Qs_{layers}_{model_action}_{model_lattice_size_str}_HC_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
@@ -142,9 +134,7 @@ for mass in masses:
 
     # Restricted model
     restricted_points = []
-    for layers in sorted(
-        set(extract_layers_or_steps(f) for f in os.listdir("data/Qs"))
-    ):
+    for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
         path = f"data/Qs/Qs_{layers}_{model_action}_{model_lattice_size_str}_restricted_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
@@ -168,44 +158,44 @@ plt.errorbar(
     factors_hopping,
     yerr=factors_hopping_err,
     linestyle="none",
-    color="blue",
+    color="#33bbee",
     marker="o",
     markerfacecolor="none",
     capsize=3,
     label="Hopping expansion",
 )
 plt.errorbar(
-    masses_HC,
-    factors_HC,
-    yerr=factors_HC_err,
+    masses_GMRES,
+    factors_GMRES,
+    yerr=factors_GMRES_err,
     linestyle="none",
-    color="orange",
-    marker="s",
+    color="#ee3377",
+    marker="^",
     markerfacecolor="none",
     capsize=3,
-    label="HC model",
+    label="GMRES",
 )
 plt.errorbar(
     masses_restricted,
     factors_restricted,
     yerr=factors_restricted_err,
     linestyle="none",
-    color="green",
+    color="#0077bb",
     marker="D",
     markerfacecolor="none",
     capsize=3,
     label="Restricted model",
 )
 plt.errorbar(
-    masses_GMRES,
-    factors_GMRES,
-    yerr=factors_GMRES_err,
+    masses_HC,
+    factors_HC,
+    yerr=factors_HC_err,
     linestyle="none",
-    color="red",
-    marker="^",
+    color="#ee7733",
+    marker="s",
     markerfacecolor="none",
     capsize=3,
-    label="GMRES",
+    label="HC model",
 )
 
 plt.xlabel("Mass")
@@ -221,6 +211,6 @@ plt.grid(True, which="both", linestyle="--", alpha=0.5)
 os.makedirs("plots/convergence", exist_ok=True)
 
 plt.savefig(
-    f"plots/pdf/convergence/convergence_rate_{action}_{lattice_size_str}_{model_action}_{model_lattice_size_str}.pdf",
+    f"plots/convergence/convergence_rate_{action}_{lattice_size_str}_{model_action}_{model_lattice_size_str}.pdf",
     bbox_inches="tight",
 )
