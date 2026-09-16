@@ -65,7 +65,6 @@ match model_type:
         for p in model.parameters():
             p.data *= 1e-4
         if mass > -0.5:
-            lr *= 0.1
             kappa = 1 / (2 * mass + 8)
             model.overall_factor.data += (
                 2 * kappa * torch.ones_like(model.overall_factor)
@@ -78,7 +77,6 @@ match model_type:
         for p in model.parameters():
             p.data *= 1e-4
         if mass > -0.5:
-            lr *= 0.1
             kappa = 1 / (2 * mass + 8)
             model.weights[0].data[0, :, 0] += 2 * kappa
             model.weights[0].data[0, 0, 0] -= 1
@@ -92,8 +90,7 @@ match model_type:
         model = Model_HL(layers, model_paths)
         for p in model.parameters():
             p.data *= 1e-4
-        if mass > 0:
-            lr *= 0.1
+        if mass > -0.5:
             kappa = 1 / (2 * mass + 8)
             model.weights[0].data[0, :] += 2 * kappa * generators[0]
             for wi in range(1, len(model.weights)):
