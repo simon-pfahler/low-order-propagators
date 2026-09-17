@@ -425,4 +425,4 @@ rule plot_coefficient_vs_layers:
     output:
         "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
     shell:
-        "plot_coefficient_vs_layers.py --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass} --path={wildcards.path} --gamma_index={wildcards.gamma_index}"
+        "python scripts/plot_coefficient_vs_layers.py --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass} --path='{wildcards.path}' --gamma_index={wildcards.gamma_index}"
