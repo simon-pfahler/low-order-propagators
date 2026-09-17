@@ -390,7 +390,7 @@ rule plot_convergence_rate:
     output:
         "plots/pdf/convergence/convergence_rate_{action}_{lattice_size}_{model_action}_{model_lattice_size}.pdf",
     shell:
-        "python plot_convergence_rate.py --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size}"
+        "python scripts/plot_convergence_rate.py --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size}"
 
 rule plot_history_comparison:
     threads: 1
