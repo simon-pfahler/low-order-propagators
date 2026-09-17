@@ -9,7 +9,7 @@ VOLUME="8c16"
 
 MASSES = [f"{m:.2f}" for m in np.arange(-5, 2.2, 0.2)]
 
-SEEDED_LAYERS=[1,2,3,4]
+SEEDED_LAYERS=[1,2,3,4,6,8]
 SEEDED_MASSES = [f"{m:.2f}" for m in range(-5,3)]
 # <<< Parameters
 
