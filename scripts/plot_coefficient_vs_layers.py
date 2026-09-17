@@ -127,6 +127,6 @@ plt.title(
 os.makedirs("plots/coefficients/", exist_ok=True)
 
 plt.savefig(
-    f"plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size_str}_p{path}_g{gamma_index}_m{mass}.pdf",
+    f"plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size_str}_p{args["--path"]}_g{gamma_index}_m{mass}.pdf",
     bbox_inches="tight",
 )
