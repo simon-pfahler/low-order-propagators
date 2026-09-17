@@ -51,10 +51,6 @@ for seed in range(nrseeds):
         layer_weights[seed][l] *= torch.exp(-1j * angle)
         overall_factors[seed] *= torch.exp(1j * angle)
 
-    # Sort layers so the sum of absolute values increases with layer index
-    sort_order = torch.argsort(-torch.norm(layer_weights[seed], dim=1))
-    layer_weights[seed] = layer_weights[seed][sort_order]
-
 overall_factor_mean = torch.mean(overall_factors)
 layer_weights_mean = torch.mean(layer_weights, dim=0)
 overall_factor_std_real = torch.std(overall_factors.real)
