@@ -90,8 +90,15 @@ all_coefficients = torch.load(
 
 nr_paths = 0
 for k, v in all_coefficients.items():
-    if canonicalize_path(k)[0] == path:
-        hopping_coefficient += v[gamma_index]
+    canonical_path, new_indices, new_signs = canonicalize_path(k)
+    new_generator_indices, new_generator_signs = generator_mapping(
+        new_indices, new_signs
+    )
+    if canonical_path == path:
+        hopping_coefficient += (
+            new_generator_signs[gamma_index]
+            * v[new_generator_indices[gamma_index]]
+        )
         nr_paths += 1
 hopping_coefficient /= nr_paths
 
