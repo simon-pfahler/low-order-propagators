@@ -185,7 +185,7 @@ rule plot_coefficient_vs_layers_main:
             lattice_size="8c16",
             path="[]",
             gamma_index=[0],
-            mass=MASSES,
+            mass=SEEDED_MASSES,
         ),
         expand(
             "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
@@ -194,7 +194,7 @@ rule plot_coefficient_vs_layers_main:
             lattice_size="8c16",
             path=["[(0,1)]", "[(0,2)]"],
             gamma_index=[0,1],
-            mass=MASSES,
+            mass=SEEDED_MASSES,
         ),
         expand(
             "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
@@ -203,7 +203,7 @@ rule plot_coefficient_vs_layers_main:
             lattice_size="8c16",
             path="[(0,1),(1,1)]",
             gamma_index=[0,1,2],
-            mass=MASSES,
+            mass=SEEDED_MASSES,
         ),
 # <<< Rules to aggregate results
 
@@ -264,6 +264,19 @@ rule get_coefficients_model:
         type="HC|HL|restricted",
     shell:
         "python scripts/get_coefficients.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
+
+rule get_coefficients_model_seeded:
+    threads: 16
+    resources:
+        cores = 16
+    input:
+        "data/weights/seeded_weights_{layers}layers_{action}_{lattice_size}_{type}_m{mass}_seed{seed}.pt"
+    output:
+        "data/coefficients/seeded_coefficients_{layers}layers_{action}_{lattice_size}_{type}_m{mass}_seed{seed}.pt"
+    wildcard_constraints:
+        type="HC|HL|restricted",
+    shell:
+        "python scripts/get_coefficients.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass} --seed={wildcards.seed}"
 
 rule get_coefficients_hopping:
     threads: lambda wildcards: 2 * int(wildcards.layers)
@@ -340,8 +353,8 @@ rule plot_mass_dependence_coefficients:
         lambda wildcards: expand(
             "data/coefficients/coefficients_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
             layers=LAYERS,
-            action=wildcards.model_action,
-            lattice_size=wildcards.model_lattice_size,
+            action=wildcards.action,
+            lattice_size=wildcards.lattice_size,
             model_type=wildcards.model_type,
             mass=MASSES,
         ),
@@ -397,16 +410,16 @@ rule plot_coefficient_vs_layers:
         cores = 1
     input:
         lambda wildcards: expand(
-            "data/coefficients/coefficients_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
-            layers=LAYERS,
+            "data/coefficients/seeded_coefficients_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}_seed{seed}.pt",
+            layers=SEEDED_LAYERS,
             action=wildcards.action,
             lattice_size=wildcards.lattice_size,
             model_type=wildcards.model_type,
             mass=wildcards.mass,
+            seed=range(5),
         ),
         lambda wildcards: expand(
-            "data/coefficients/coefficients_4layers_{model_type}_m{mass}.pt",
-            model_type=wildcards.model_type,
+            "data/coefficients/coefficients_4layers_hopping_m{mass}.pt",
             mass=wildcards.mass,
         ),
     output:
