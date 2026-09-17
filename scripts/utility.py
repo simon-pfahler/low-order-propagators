@@ -79,7 +79,7 @@ def get_coefficients_from_weights(weights, path_length_min, path_length_max):
 
 
 def get_hopping_weights(mass, nlayers):
-    kappa = 1 / (mass + 4)
+    kappa = 1 / (mass + 4) if mass != -4 else torch.nan
     hopping_weights = {
         "weights.0": torch.zeros(1, len(model_paths), 16, dtype=torch.cdouble)
     }
