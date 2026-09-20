@@ -253,9 +253,9 @@ rule get_Qs_baseline:
         "python scripts/get_approximation_quality.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
 rule get_coefficients_model:
-    threads: 16
+    threads: lambda wildcards: 2 * int(wildcards.layers)
     resources:
-        cores = 16
+        cores = lambda wildcards: 2 * int(wildcards.layers)
     input:
         "data/weights/weights_{layers}layers_{action}_{lattice_size}_{type}_m{mass}.pt"
     output:
@@ -266,9 +266,9 @@ rule get_coefficients_model:
         "python scripts/get_coefficients.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
 rule get_coefficients_model_seeded:
-    threads: 16
+    threads: lambda wildcards: 2 * int(wildcards.layers)
     resources:
-        cores = 16
+        cores = lambda wildcards: 2 * int(wildcards.layers)
     input:
         "data/weights/seeded_weights_{layers}layers_{action}_{lattice_size}_{type}_m{mass}_seed{seed}.pt"
     output:
