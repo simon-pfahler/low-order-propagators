@@ -118,7 +118,7 @@ for mass in masses:
     # HC model
     hc_points = []
     for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
-        path = f"data/Qs/Qs_{layers}_{model_action}_{model_lattice_size_str}_HC_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+        path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_HC_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
             mean = float(torch.mean(data))
@@ -135,7 +135,7 @@ for mass in masses:
     # Restricted model
     restricted_points = []
     for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
-        path = f"data/Qs/Qs_{layers}_{model_action}_{model_lattice_size_str}_restricted_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+        path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_restricted_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
             mean = float(torch.mean(data))
