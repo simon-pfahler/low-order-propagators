@@ -85,13 +85,21 @@ plt.figure(figsize=(10, 6))
 plt.plot(
     iterations_HC,
     train_costs_HC,
-    "b-",
+    color="#ee7733",
+    linestyle="-",
     label="HC model",
     linewidth=1,
 )
-plt.scatter(test_iterations_HC, test_costs_HC, color="b", s=10)
-plt.plot(iterations_HL, train_costs_HL, "r-", label="HL model", linewidth=1)
-plt.scatter(test_iterations_HL, test_costs_HL, color="r", s=10)
+plt.scatter(test_iterations_HC, test_costs_HC, color="#ee7733", s=10)
+plt.plot(
+    iterations_HL,
+    train_costs_HL,
+    color="#009988",
+    linestyle="-",
+    label="HL model",
+    linewidth=1,
+)
+plt.scatter(test_iterations_HL, test_costs_HL, color="#009988", s=10)
 
 plt.xlabel("Iteration")
 plt.ylabel("Cost")
