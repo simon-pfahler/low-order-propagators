@@ -168,7 +168,7 @@ rule plot_coefficients_mass_dependence_main:
 rule plot_history_comparison_main:
     input:
         expand(
-            "plots/histories/history_comparison_{layers}layers_WilsonQuenched_8c16_m-0.8.pdf",
+            "plots/histories/history_comparison_{layers}layers_WilsonQuenched_8c16_m-0.80.pdf",
             layers=LAYERS,
         ),
 
@@ -402,7 +402,7 @@ rule plot_history_comparison:
     output:
         "plots/histories/history_comparison_{layers}layers_{action}_{lattice_size}_m{mass}.pdf",
     shell:
-        "python scripts/plot_history_comparsion.py --layers={wildcards.layers} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
+        "python scripts/plot_history_comparison.py --layers={wildcards.layers} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
 rule plot_coefficient_vs_layers:
     threads: 1
