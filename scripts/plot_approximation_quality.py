@@ -156,3 +156,23 @@ plt.savefig(
     f"plots/Qs/Qs_{layers}layers_{action}_{lattice_size_str}_{model_action}_{model_lattice_size_str}.pdf",
     bbox_inches="tight",
 )
+
+improvements_HC = torch.tensor(
+    [
+        min((eGMRES - eHC) / eGMRES, (eH - eHC) / eH)
+        for eGMRES, eH, eHC in zip(means_GMRES, means_hopping, means_HC)
+    ]
+)
+improvements_restricted = torch.tensor(
+    [
+        min((eGMRES - eR) / eGMRES, (eH - eR) / eH)
+        for eGMRES, eH, eR in zip(means_GMRES, means_hopping, means_restricted)
+    ]
+)
+
+print(
+    f"Relative improvement between HC and best baseline: {100*torch.mean(improvements_HC[:23]):.2f}% below m_h, {100*torch.mean(improvements_HC[23:]):.2f}% above m_h"
+)
+print(
+    f"Relative improvement between restricted and best baseline: {100*torch.mean(improvements_restricted[:23]):.2f}% below m_h, {100*torch.mean(improvements_restricted[23:]):.2f}% above m_h"
+)

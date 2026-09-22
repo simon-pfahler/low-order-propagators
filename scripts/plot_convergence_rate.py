@@ -47,12 +47,16 @@ def fit_convergence_factor(layers, means, sigmas):
     log_means = np.log(means)
     log_sigmas = sigmas / means
     cov_mode = True if len(layers) > 2 else "unscaled"
-    coeffs, cov = np.polyfit(
-        layers, log_means, 1, w=1.0 / log_sigmas, cov=cov_mode
-    )
-    slope, slope_var = coeffs[0], cov[0, 0]
-    b = float(np.exp(slope))
-    b_err = float(b * np.sqrt(slope_var))
+    try:
+        coeffs, cov = np.polyfit(
+            layers, log_means, 1, w=1.0 / log_sigmas, cov=cov_mode
+        )
+        slope, slope_var = coeffs[0], cov[0, 0]
+        b = float(np.exp(slope))
+        b_err = float(b * np.sqrt(slope_var))
+    except:
+        b = np.nan
+        b_err = np.nan
     return b, b_err
 
 
@@ -79,11 +83,19 @@ factors_GMRES_err = []
 # Find all masses
 masses = sorted(set(extract_mass(f) for f in os.listdir("data/Qs")))
 
+# Find all layers
+layerss = sorted(set(extract_layers(f) for f in os.listdir("data/Qs")))
+layerss = [1, 2, 3, 4, 6]
+
 # For each mass, gather Qs across all available steps/layers and fit
 for mass in masses:
+    if mass < -0.5:
+        layerss = [1, 2, 3, 4, 6, 8, 12, 16]
+    else:
+        layerss = [1, 2, 3, 4, 6]
     # Hopping expansion
     hopping_points = []
-    for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
+    for layers in layerss:
         path = f"data/Qs/Qs_{layers}layers_hopping_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
@@ -100,7 +112,7 @@ for mass in masses:
 
     # GMRES
     gmres_points = []
-    for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
+    for layers in layerss:
         path = f"data/Qs/Qs_{layers}layers_GMRES_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
@@ -117,7 +129,7 @@ for mass in masses:
 
     # HC model
     hc_points = []
-    for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
+    for layers in layerss:
         path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_HC_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
@@ -134,7 +146,7 @@ for mass in masses:
 
     # Restricted model
     restricted_points = []
-    for layers in sorted(set(extract_layers(f) for f in os.listdir("data/Qs"))):
+    for layers in layerss:
         path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_restricted_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)

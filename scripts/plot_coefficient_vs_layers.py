@@ -30,7 +30,7 @@ sys.path.insert(0, "scripts")
 
 # Parse docopt arguments
 args = docopt(__doc__)
-model_type = args["--model_type"]
+model_types = args["--model_type"].split(",")
 action = args["--action"]
 lattice_size_str = args["--lattice_size"]
 mass = args["--mass"]
@@ -47,40 +47,61 @@ gamma_index = int(args["--gamma_index"])
 
 nrseeds = 5
 
-layerss = [
-    layers
-    for layers in range(20)
-    if os.path.exists(
-        f"data/coefficients/seeded_coefficients_{layers}layers_{action}_{lattice_size_str}_{model_type}_m{mass}_seed0.pt"
-    )
-]
+plt.figure(figsize=(5, 3))
 
-path_length = get_path_length(path)
-
-coefficients = torch.zeros(nrseeds, len(layerss), dtype=torch.cdouble)
-
-# Get coefficients
-for i, layers in enumerate(layerss):
-    for seed in range(nrseeds):
-        # Load coefficients
-        all_coefficients = torch.load(
-            f"data/coefficients/seeded_coefficients_{layers}layers_{action}_{lattice_size_str}_{model_type}_m{mass}_seed{seed}.pt",
-            weights_only=True,
+for model_type in model_types:
+    layerss = [
+        layers
+        for layers in range(20)
+        if os.path.exists(
+            f"data/coefficients/seeded_coefficients_{layers}layers_{action}_{lattice_size_str}_{model_type}_m{mass}_seed0.pt"
         )
+    ]
 
-        nr_paths = 0
-        for p, v in all_coefficients.items():
-            canonical_path, new_indices, new_signs = canonicalize_path(p)
-            new_generator_indices, new_generator_signs = generator_mapping(
-                new_indices, new_signs
+    path_length = get_path_length(path)
+
+    coefficients = torch.zeros(nrseeds, len(layerss), dtype=torch.cdouble)
+
+    # Get coefficients
+    for i, layers in enumerate(layerss):
+        for seed in range(nrseeds):
+            # Load coefficients
+            all_coefficients = torch.load(
+                f"data/coefficients/seeded_coefficients_{layers}layers_{action}_{lattice_size_str}_{model_type}_m{mass}_seed{seed}.pt",
+                weights_only=True,
             )
-            if canonical_path == path:
-                coefficients[seed, i] += (
-                    new_generator_signs[gamma_index]
-                    * v[new_generator_indices[gamma_index]]
+
+            nr_paths = 0
+            for p, v in all_coefficients.items():
+                canonical_path, new_indices, new_signs = canonicalize_path(p)
+                new_generator_indices, new_generator_signs = generator_mapping(
+                    new_indices, new_signs
                 )
-                nr_paths += 1
-        coefficients[seed, i] /= nr_paths
+                if canonical_path == path:
+                    coefficients[seed, i] += (
+                        new_generator_signs[gamma_index]
+                        * v[new_generator_indices[gamma_index]]
+                    )
+                    nr_paths += 1
+            coefficients[seed, i] /= nr_paths
+
+    symbol = "s"
+    color = "#ee7733"
+    if model_type == "restricted":
+        symbol = "D"
+        color = "#0077bb"
+
+    plt.errorbar(
+        layerss,
+        coefficients.real.mean(dim=0),
+        yerr=coefficients.real.std(dim=0),
+        linestyle="none",
+        color=color,
+        capsize=5,
+        marker=symbol,
+        markerfacecolor="none",
+        label=f"{model_type} model",
+    )
 
 hopping_coefficient = 0
 all_coefficients = torch.load(
@@ -102,23 +123,9 @@ for k, v in all_coefficients.items():
         nr_paths += 1
 hopping_coefficient /= nr_paths
 
-plt.figure(figsize=(5, 5))
-
-plt.errorbar(
-    layerss,
-    coefficients.real.mean(dim=0),
-    yerr=coefficients.real.std(dim=0),
-    linestyle="none",
-    color="blue",
-    capsize=5,
-    marker="o",
-    markerfacecolor="none",
-    label=f"{model_type} model",
-)
-
 xlim = plt.xlim()
 
-plt.axhline(hopping_coefficient.real, label=f"Hopping expansion", c="red")
+plt.axhline(hopping_coefficient.real, label=f"Hopping expansion", c="#33bbee")
 
 plt.xlim(xlim)
 
@@ -127,13 +134,13 @@ plt.legend()
 plt.xlabel("Layers")
 plt.ylabel("Real part of coefficient")
 plt.title(
-    f"Coefficient evolution for {model_type} models\n"
-    f"path {path}, Gamma index {gamma_index}, at mass {mass}"
+    f"Coefficient evolution for path {path}\n"
+    f"Gamma index {gamma_index}, at mass {mass}"
 )
 
 os.makedirs("plots/coefficients/", exist_ok=True)
 
 plt.savefig(
-    f"plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size_str}_p{args["--path"]}_g{gamma_index}_m{mass}.pdf",
+    f"plots/coefficients/coefficients_vs_layers_{args["--model_type"]}_{action}_{lattice_size_str}_p{args["--path"]}_g{gamma_index}_m{mass}.pdf",
     bbox_inches="tight",
 )
