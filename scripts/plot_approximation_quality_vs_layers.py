@@ -29,6 +29,8 @@ def extract_layers(filename):
     return layers
 
 
+plt.style.use("./scripts/iclr2027.mplstyle")
+
 # Parse docopt arguments
 args = docopt(__doc__)
 mass = float(args["--mass"])
@@ -89,7 +91,7 @@ for layers in layerss:
         stds_restricted.append(torch.std(data))
 
 # Create plot
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(4.5, 2.3))
 
 plt.errorbar(
     layerss_hopping,
@@ -137,11 +139,9 @@ plt.errorbar(
 )
 
 plt.xlabel("Number of steps/layers")
-plt.ylabel("Approximation quality")
-plt.title(
-    f"Approximation quality vs layers (mass={mass:.2f}, {action} {lattice_size_str})\n"
-    f"Models trained on {model_action} {model_lattice_size_str}"
-)
+plt.ylabel("Approximation Error")
+plt.xticks([2, 4, 6, 8, 12, 16])
+plt.title(rf"Approximation Error vs Layers ($m={mass}$)")
 plt.yscale("log")
 plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
