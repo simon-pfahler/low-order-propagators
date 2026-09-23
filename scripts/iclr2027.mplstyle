@@ -1,0 +1,72 @@
+# ICLR 2027 / NeurIPS-style matplotlib style
+# Based on ICLR 2027 formatting guidelines (variant of NeurIPS format)
+
+# Figure dimensions
+# ICLR text area: 5.5 inches wide x 9 inches tall
+# For single column figures, use width that fits well
+figure.figsize : 3.5, 2.5
+figure.dpi : 300
+figure.facecolor : white
+
+# Font settings
+# ICLR prefers Times New Roman, 10pt type
+font.family : serif
+font.serif : Times New Roman, Times, DejaVu Serif, serif
+font.size : 10
+font.weight : normal
+
+# Axes settings
+axes.labelsize : 10
+axes.titlesize : 10
+axes.labelweight : normal
+axes.linewidth : 0.8
+axes.edgecolor : black
+axes.facecolor : white
+axes.grid : True
+axes.grid.axis : both
+axes.grid.which : major
+
+# Grid settings (matplotlib 3.11+)
+grid.alpha : 0.5
+grid.color : 0.75, 0.75, 0.75
+grid.linestyle : --
+grid.linewidth : 0.5
+
+# Ticks
+xtick.labelsize : 9
+ytick.labelsize : 9
+xtick.major.size : 4
+xtick.minor.size : 2
+xtick.major.width : 0.8
+xtick.minor.width : 0.5
+xtick.major.pad : 4
+xtick.minor.pad : 4
+xtick.color : black
+ytick.color : black
+
+# Legend
+legend.fontsize : 9
+legend.frameon : True
+legend.framealpha : 1.0
+legend.edgecolor : black
+legend.handlelength : 1.5
+legend.handletextpad : 0.5
+legend.borderaxespad : 0.5
+legend.columnspacing : 1.0
+
+# Lines
+lines.linewidth : 1.2
+lines.color : blue
+lines.markersize : 6
+
+# Text
+text.color : black
+
+# Images
+image.cmap : viridis
+
+# Save settings
+savefig.dpi : 300
+savefig.bbox : tight
+savefig.format : pdf
+savefig.pad_inches : 0.05

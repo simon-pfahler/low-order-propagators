@@ -27,6 +27,8 @@ def extract_mass(filename):
     return mass
 
 
+plt.style.use("scripts/iclr2027.mplstyle")
+
 # Parse docopt arguments
 args = docopt(__doc__)
 layers = int(args["--layers"])
@@ -87,7 +89,7 @@ for mass in masses:
         stds_restricted.append(torch.std(data))
 
 # Create plot
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(4.5, 2.3))
 
 plt.errorbar(
     masses_hopping,
@@ -135,9 +137,9 @@ plt.errorbar(
 )
 
 plt.xlabel("Mass")
-plt.ylabel("Approximation Quality")
+plt.ylabel("Approximation Error")
 plt.title(
-    f"Approximation Quality vs Mass for {layers} layers\n"
+    f"Approximation Error vs Mass for {layers} layers\n"
     f"{action}, {lattice_size_str} volume\n"
     f"Trained on {model_action}, {model_lattice_size_str} volume"
 )
@@ -171,8 +173,8 @@ improvements_restricted = torch.tensor(
 )
 
 print(
-    f"Relative improvement between HC and best baseline: {100*torch.mean(improvements_HC[:23]):.2f}% below m_h, {100*torch.mean(improvements_HC[23:]):.2f}% above m_h"
+    f"Relative improvement between HC and best baseline: {100*torch.mean(improvements_HC):.2f}% ({100*torch.mean(improvements_HC[:23]):.2f}% below m_h, {100*torch.mean(improvements_HC[23:]):.2f}% above m_h)"
 )
 print(
-    f"Relative improvement between restricted and best baseline: {100*torch.mean(improvements_restricted[:23]):.2f}% below m_h, {100*torch.mean(improvements_restricted[23:]):.2f}% above m_h"
+    f"Relative improvement between restricted and best baseline: {100*torch.mean(improvements_restricted):.2f}% ({100*torch.mean(improvements_restricted[:23]):.2f}% below m_h, {100*torch.mean(improvements_restricted[23:]):.2f}% above m_h)"
 )
