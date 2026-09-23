@@ -32,10 +32,13 @@ def get_coefficients(W):
     return 0.25 * torch.einsum("njk,kj->n", generators, W)
 
 
-def get_coefficients_from_weights(weights, path_length_min, path_length_max):
+def get_coefficients_from_weights(
+    weights, path_length_min, path_length_max, threshold=0.0
+):
     contributions = {((), 0): torch.eye(4, dtype=torch.cdouble)}
 
     for n in range(len(weights)):
+        print(f"At layer {n}, {len(contributions)} contributions")
         weights_layer = torch.einsum(
             "njk,ion->iojk", generators, weights[f"weights.{n}"]
         )
@@ -64,6 +67,9 @@ def get_coefficients_from_weights(weights, path_length_min, path_length_max):
                     weights_layer[last_path_idx, next_path_idx],
                     contribution,
                 )
+
+                if torch.linalg.norm(new_contrib) < threshold:
+                    continue
 
                 # Accumulate contributions
                 key = (consolidated_new_path, next_path_idx)
