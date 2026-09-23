@@ -24,7 +24,7 @@ import torch
 from docopt import docopt
 from utility import canonicalize_path, generator_mapping, get_path_length
 
-matplotlib.use("Agg")
+plt.style.use("./scripts/iclr2027.mplstyle")
 
 sys.path.insert(0, "scripts")
 
@@ -47,7 +47,7 @@ gamma_index = int(args["--gamma_index"])
 
 nrseeds = 5
 
-plt.figure(figsize=(5, 3))
+plt.figure(figsize=(4.5, 2.3))
 
 for model_type in model_types:
     layerss = [
@@ -129,8 +129,8 @@ plt.axhline(hopping_coefficient.real, label=f"Hopping expansion", c="#33bbee")
 
 plt.xlim(xlim)
 
-plt.grid()
-plt.legend()
+plt.grid(True, which="both", linestyle="--", alpha=0.5)
+plt.legend(loc="upper right")
 plt.xlabel("Layers")
 plt.ylabel("Real part of coefficient")
 plt.title(

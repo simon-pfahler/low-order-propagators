@@ -11,9 +11,11 @@ figure.facecolor : white
 # Font settings
 # ICLR prefers Times New Roman, 10pt type
 font.family : serif
-font.serif : Times New Roman, Times, DejaVu Serif, serif
+font.serif : Times New Roman, Times
 font.size : 10
 font.weight : normal
+text.usetex : True
+text.latex.preamble : \usepackage{amsmath}
 
 # Axes settings
 axes.labelsize : 10
