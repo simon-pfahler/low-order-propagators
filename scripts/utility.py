@@ -40,40 +40,43 @@ def get_coefficients_from_weights(weights, path_length_min, path_length_max):
             "njk,ion->iojk", generators, weights[f"weights.{n}"]
         )
 
-        new_contributions = dict()
-        for key in contributions.keys():
-            path, last_path_idx = key
-            contribution = contributions[key]
-
+        new_contributions = {}
+        for (path, last_path_idx), contribution in contributions.items():
             for next_path_idx in range(weights_layer.shape[1]):
-                consolidated_new_path = consolidate_path(
-                    [*path, *model_paths[next_path_idx]]
+                new_segment = model_paths[next_path_idx]
+
+                consolidated_new_path = consolidate_path_incremental(
+                    path, new_segment
                 )
 
-                new_path_length = get_path_length(consolidated_new_path)
-                if new_path_length < path_length_min - (
-                    len(weights) - 1 - n
-                ) or new_path_length > path_length_max + (len(weights) - 1 - n):
+                new_path_length = get_path_length_consolidated(
+                    consolidated_new_path
+                )
+                remaining_layers = len(weights) - 1 - n
+                if (
+                    new_path_length < path_length_min - remaining_layers
+                    or new_path_length > path_length_max + remaining_layers
+                ):
                     continue
 
-                new_contribution_key = (
-                    tuple(consolidated_new_path),
-                    next_path_idx,
-                )
-
-                if new_contribution_key not in new_contributions.keys():
-                    new_contributions[new_contribution_key] = 0
-                new_contributions[new_contribution_key] += torch.einsum(
+                new_contrib = torch.einsum(
                     "ij,jk->ik",
                     weights_layer[last_path_idx, next_path_idx],
                     contribution,
                 )
 
-        contributions = deepcopy(new_contributions)
+                # Accumulate contributions
+                key = (consolidated_new_path, next_path_idx)
+                if key in new_contributions:
+                    new_contributions[key] += new_contrib
+                else:
+                    new_contributions[key] = new_contrib
 
-    coefficients = dict()
-    for k, v in contributions.items():
-        coefficients[k[0]] = get_coefficients(v)
+        contributions = new_contributions
+
+    coefficients = {}
+    for (path, _), contribution in contributions.items():
+        coefficients[path] = get_coefficients(contribution)
 
     return coefficients
 
@@ -226,6 +229,32 @@ def consolidate_path(path):
     return new_path
 
 
+def consolidate_path_incremental(cpath, new_segment):
+    """Incrementally consolidate a path by adding a segment."""
+
+    if not new_segment:
+        return cpath
+
+    mu_new, d_new = new_segment[0]
+
+    if d_new == 0:
+        return cpath
+
+    if not cpath:
+        return ((mu_new, d_new),)
+
+    last_mu, last_d = cpath[-1]
+
+    if mu_new == last_mu:
+        new_d = last_d + d_new
+        if new_d == 0:
+            return cpath[:-1]
+        else:
+            return cpath[:-1] + ((mu_new, new_d),)
+
+    return cpath + ((mu_new, d_new),)
+
+
 def canonicalize_path(path):
     """Canonicalize a path so hops are in increasing dimension, and the first
     hop in each dimension is positive."""
@@ -303,6 +332,15 @@ def get_path_length(path):
     """Get length of a path."""
     cpath = consolidate_path(path)
 
+    res = 0
+    for mu, d in cpath:
+        res += abs(d)
+
+    return res
+
+
+def get_path_length_consolidated(cpath):
+    """Get length of a consolidated path."""
     res = 0
     for mu, d in cpath:
         res += abs(d)

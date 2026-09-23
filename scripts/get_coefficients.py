@@ -81,7 +81,7 @@ match model_type:
 coefficients = get_coefficients_from_weights(
     weights,
     path_length_min=0,
-    path_length_max=4,
+    path_length_max=3,
 )
 
 os.makedirs("data/coefficients", exist_ok=True)
