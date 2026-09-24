@@ -130,7 +130,7 @@ plt.axhline(hopping_coefficient.real, label=f"Hopping expansion", c="#33bbee")
 plt.xlim(xlim)
 
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
-plt.legend(loc="upper right")
+plt.legend(loc="upper left")
 plt.xlabel("Layers")
 plt.ylabel("Real part of coefficient")
 plt.title(
