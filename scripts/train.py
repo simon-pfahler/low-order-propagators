@@ -174,6 +174,7 @@ for t in range(training_steps + 1):
                 break
 
             test_cost = new_test_cost
+        f_history.flush()
     else:
         # Otherwise, just write the training cost
         f_history.write(f"{t} {cost}\n")
