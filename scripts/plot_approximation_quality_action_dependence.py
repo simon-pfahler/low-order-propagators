@@ -37,10 +37,10 @@ lattice_size_str = args["--lattice_size"]
 model_action = args["--model_action"]
 model_lattice_size_str = args["--model_lattice_size"]
 
-fig, ax = plt.subplots(3, 3, figsize=(12, 8))
+fig, ax = plt.subplots(3, 3, figsize=(10, 7))
 plt.subplots_adjust(wspace=0.1, hspace=0.1)
 
-actions = ["WilsonQuenched", "WilsonDynamic", "Haar", "Identity"]
+actions = ["WilsonQuenched", "WilsonDynamic", "Haar"]
 
 for train in range(3):
     model_action = actions[train]
