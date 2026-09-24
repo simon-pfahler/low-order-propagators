@@ -44,7 +44,7 @@ def get_reference_curve(order, prefactor):
     return mass_range, line_values
 
 
-matplotlib.use("Agg")
+plt.style.use("./scripts/iclr2027.mplstyle")
 
 sys.path.insert(0, "scripts")
 
@@ -107,15 +107,15 @@ for mass_idx, mass in enumerate(masses):
         hopping_v = hopping_coefficients[k]
         for i in range(16):
             if hopping_v[i] != 0:
-                scatter_points[categories.index(ck)][mass_idx].append(
-                    torch.abs(v[i])
-                )
+                scatter_points[categories.index(ck)][mass_idx].append(v[i].real)
             else:
-                scatter_points[-1][mass_idx].append(torch.abs(v[i]))
+                scatter_points[-1][mass_idx].append(v[i].real)
 
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(4.5, 2.3))
 ymin = 0
 ymax = 0
+colors = ["#cc3311", "#bbbbbb"]
+colors = colors[: len(scatter_points) - 1] + [colors[-1]]
 for idx in range(len(scatter_points)):
     s = torch.tensor(scatter_points[idx])
     m = torch.tensor(masses).unsqueeze(-1).expand(s.shape)
@@ -123,7 +123,9 @@ for idx in range(len(scatter_points)):
         continue
     if idx != len(scatter_points) - 1:
         ymax = max(ymax, torch.max(s).item())
-    plt.scatter(m, s, label=category_names[idx])
+        ymin = min(ymin, torch.min(s).item())
+
+    plt.scatter(m, s, zorder=10 - idx, c=colors[idx], label=category_names[idx])
 
 for factor in range(path_length):
     plt.plot(
@@ -135,12 +137,13 @@ if path_length == 0:
     plt.plot(
         *get_reference_curve(0, 1),
         label="0,1",
-        c="r",
+        c="#33bbee",
+        zorder=15,
     )
 
 plt.xlabel("Mass")
-plt.ylabel("Absolute value of coefficient")
-plt.ylim(ymin, 1.1 * ymax)
+plt.ylabel("Real part of coefficient")
+plt.ylim(1.1 * ymin, 1.1 * ymax)
 plt.title(
     f"Dependence of coefficients on mass parameter\n"
     f"for {layers} layers, {action} {lattice_size_str}, {model_type}\n"
