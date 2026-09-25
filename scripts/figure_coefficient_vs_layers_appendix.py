@@ -93,6 +93,9 @@ for idx in range(8):
             symbol = "D"
             color = "#0077bb"
 
+        label = "HC model"
+        if model_type == "restricted":
+            label = "Restricted model"
         ax[idx].errorbar(
             layerss,
             coefficients.real.mean(dim=0),
@@ -102,7 +105,7 @@ for idx in range(8):
             capsize=5,
             marker=symbol,
             markerfacecolor="none",
-            label=f"{model_type} model",
+            label=label,
         )
 
     hopping_coefficient = 0
