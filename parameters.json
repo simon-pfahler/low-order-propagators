@@ -1,0 +1,39 @@
+{
+    "WilsonQuenched":
+    {
+        "8c16":
+        {
+            "train_configs": [1200,2200,2350,4724],
+            "test_configs": [1000,2000,2347,786]
+        },
+        "16c32":
+        {
+            "train_configs": [],
+            "test_configs": [282, 329, 472, 591]
+        }
+    },
+    "WilsonDynamic":
+    {
+        "8c16":
+        {
+            "train_configs": [60, 70, 80, 90],
+            "test_configs": [1060, 1070, 1080, 1090]
+        }
+    },
+    "Haar":
+    {
+        "8c16":
+        {
+            "train_configs": [0,1,2,3],
+            "test_configs": [4,5,6,7]
+        }
+    },
+    "Identity":
+    {
+        "8c16":
+        {
+            "train_configs": [0,1,2,3],
+            "test_configs": [4,5,6,7]
+        }
+    }
+}

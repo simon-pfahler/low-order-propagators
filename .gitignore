@@ -2,8 +2,7 @@
 !.gitignore
 !scripts/
 !scripts/*
-!models/
-!models/*
+!parameters.json
 !Snakefile
 !Readme.md
 !configs/
