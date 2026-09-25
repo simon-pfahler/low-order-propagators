@@ -1,6 +1,6 @@
 # Learning Low-Order Approximations of the Quark Propagator in Lattice QCD
 
-## Creating Figures
+## Figures
 Figures from the paper can be obtained with the `scripts/figure_*.py` scripts.
 Running `snakemake` creates all plots and the data needed for them. Be aware that this takes significant time and computational resources.
 There are individual rules for each of the plots, which also generate all data necessary for the plot:
