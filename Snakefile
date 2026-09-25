@@ -230,6 +230,8 @@ rule train:
     output:
         "data/weights/weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
         "data/histories/history_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.txt",
+    wildcard_constraints:
+        model_type="HC|HL|restricted",
     shell:
         "python scripts/train.py --layers={wildcards.layers} --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
@@ -240,6 +242,8 @@ rule train_seeded:
     output:
         "data/weights/seeded_weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}_seed{seed}.pt",
         "data/histories/seeded_history_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}_seed{seed}.txt",
+    wildcard_constraints:
+        model_type="HC|HL|restricted",
     shell:
         "python scripts/train.py --layers={wildcards.layers} --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass} --seed={wildcards.seed}"
 
