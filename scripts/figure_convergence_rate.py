@@ -1,0 +1,214 @@
+"""Create the convergence plot of the paper."""
+
+import os
+import re
+
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+
+
+def extract_mass(filename):
+    try:
+        mass = float(re.search(r"_m([+-]?\d+\.?\d*)\.pt", filename).group(1))
+    except:
+        raise ValueError(f"Mass not extractable from filename '{filename}'!")
+    return mass
+
+
+def extract_layers(filename):
+    try:
+        layers = int(re.search(r"Qs_(\d+)layers", filename).group(1))
+    except:
+        raise ValueError(
+            f"Number of layers not extractable from filename '{filename}'!"
+        )
+    return layers
+
+
+def fit_convergence_factor(layers, means, sigmas):
+    """Fit r(n) = A * b^n via weighted log-linear regression."""
+    if np.any(np.isnan(means)):
+        return torch.nan, torch.nan
+    layers = np.asarray(layers, dtype=float)
+    means = np.asarray(means, dtype=float)
+    sigmas = np.asarray(sigmas, dtype=float)
+    log_means = np.log(means)
+    log_sigmas = sigmas / means
+    cov_mode = True if len(layers) > 2 else "unscaled"
+    try:
+        coeffs, cov = np.polyfit(
+            layers, log_means, 1, w=1.0 / log_sigmas, cov=cov_mode
+        )
+        slope, slope_var = coeffs[0], cov[0, 0]
+        b = float(np.exp(slope))
+        b_err = float(b * np.sqrt(slope_var))
+    except:
+        b = np.nan
+        b_err = np.nan
+    return b, b_err
+
+
+plt.style.use("./scripts/iclr2027.mplstyle")
+
+action = "WilsonQuenched"
+lattice_size_str = "16c32"
+model_action = "WilsonQuenched"
+model_lattice_size_str = "8c16"
+
+masses_hopping = []
+factors_hopping = []
+factors_hopping_err = []
+masses_HC = []
+factors_HC = []
+factors_HC_err = []
+masses_restricted = []
+factors_restricted = []
+factors_restricted_err = []
+masses_GMRES = []
+factors_GMRES = []
+factors_GMRES_err = []
+
+# Find all masses
+masses = sorted(set(extract_mass(f) for f in os.listdir("data/Qs")))
+
+# Find all layers
+layerss = sorted(set(extract_layers(f) for f in os.listdir("data/Qs")))
+layerss = [1, 2, 3, 4, 6]
+
+# For each mass, gather Qs across all available steps/layers and fit
+for mass in masses:
+    if mass < -0.5:
+        layerss = [1, 2, 3, 4, 6, 8, 12, 16]
+    else:
+        layerss = [1, 2, 3, 4, 6]
+    # Hopping expansion
+    hopping_points = []
+    for layers in layerss:
+        path = f"data/Qs/Qs_{layers}layers_hopping_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+        if os.path.exists(path):
+            data = torch.load(path, weights_only=True)
+            mean = float(torch.mean(data))
+            sem = float(torch.std(data) / np.sqrt(data.numel()))
+            hopping_points.append((layers, mean, sem))
+
+    if len(hopping_points) >= 2:
+        ns, ms, ss = zip(*hopping_points)
+        b, b_err = fit_convergence_factor(ns, ms, ss)
+        masses_hopping.append(mass)
+        factors_hopping.append(b)
+        factors_hopping_err.append(b_err)
+
+    # GMRES
+    gmres_points = []
+    for layers in layerss:
+        path = f"data/Qs/Qs_{layers}layers_GMRES_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+        if os.path.exists(path):
+            data = torch.load(path, weights_only=True)
+            mean = float(torch.mean(data))
+            sem = float(torch.std(data) / np.sqrt(data.numel()))
+            gmres_points.append((layers, mean, sem))
+
+    if len(gmres_points) >= 2:
+        ns, ms, ss = zip(*gmres_points)
+        b, b_err = fit_convergence_factor(ns, ms, ss)
+        masses_GMRES.append(mass)
+        factors_GMRES.append(b)
+        factors_GMRES_err.append(b_err)
+
+    # HC model
+    hc_points = []
+    for layers in layerss:
+        path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_HC_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+        if os.path.exists(path):
+            data = torch.load(path, weights_only=True)
+            mean = float(torch.mean(data))
+            sem = float(torch.std(data) / np.sqrt(data.numel()))
+            hc_points.append((layers, mean, sem))
+
+    if len(hc_points) >= 2:
+        ns, ms, ss = zip(*hc_points)
+        b, b_err = fit_convergence_factor(ns, ms, ss)
+        masses_HC.append(mass)
+        factors_HC.append(b)
+        factors_HC_err.append(b_err)
+
+    # Restricted model
+    restricted_points = []
+    for layers in layerss:
+        path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_restricted_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+        if os.path.exists(path):
+            data = torch.load(path, weights_only=True)
+            mean = float(torch.mean(data))
+            sem = float(torch.std(data) / np.sqrt(data.numel()))
+            restricted_points.append((layers, mean, sem))
+
+    if len(restricted_points) >= 2:
+        ns, ms, ss = zip(*restricted_points)
+        b, b_err = fit_convergence_factor(ns, ms, ss)
+        masses_restricted.append(mass)
+        factors_restricted.append(b)
+        factors_restricted_err.append(b_err)
+
+
+# Create plot
+plt.figure(figsize=(9, 6))
+
+plt.errorbar(
+    masses_hopping,
+    factors_hopping,
+    yerr=factors_hopping_err,
+    linestyle="none",
+    color="#33bbee",
+    marker="o",
+    markerfacecolor="none",
+    capsize=3,
+    label="Hopping expansion",
+)
+plt.errorbar(
+    masses_GMRES,
+    factors_GMRES,
+    yerr=factors_GMRES_err,
+    linestyle="none",
+    color="#ee3377",
+    marker="^",
+    markerfacecolor="none",
+    capsize=3,
+    label="GMRES",
+)
+plt.errorbar(
+    masses_restricted,
+    factors_restricted,
+    yerr=factors_restricted_err,
+    linestyle="none",
+    color="#0077bb",
+    marker="D",
+    markerfacecolor="none",
+    capsize=3,
+    label="Restricted model",
+)
+plt.errorbar(
+    masses_HC,
+    factors_HC,
+    yerr=factors_HC_err,
+    linestyle="none",
+    color="#ee7733",
+    marker="s",
+    markerfacecolor="none",
+    capsize=3,
+    label="HC model",
+)
+
+plt.xlabel("Mass")
+plt.ylabel(r"Convergence rate $b$ ($\varepsilon \propto b^n$)")
+plt.title(f"Convergence Rate vs Mass")
+plt.ylim(0, 1)
+plt.legend()
+plt.grid(True, which="both", linestyle="--", alpha=0.5)
+
+os.makedirs("plots/convergence", exist_ok=True)
+
+plt.savefig(
+    f"plots/convergence/convergence_rate.pdf",
+    bbox_inches="tight",
+)
