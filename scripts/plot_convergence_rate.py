@@ -60,6 +60,8 @@ def fit_convergence_factor(layers, means, sigmas):
     return b, b_err
 
 
+plt.style.use("./scripts/iclr2027.mplstyle")
+
 # Parse docopt arguments
 args = docopt(__doc__)
 action = args["--action"]
@@ -163,7 +165,7 @@ for mass in masses:
 
 
 # Create plot
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(9, 6))
 
 plt.errorbar(
     masses_hopping,
@@ -211,7 +213,7 @@ plt.errorbar(
 )
 
 plt.xlabel("Mass")
-plt.ylabel(r"Convergence rate $b$ ($Q \propto b^n$)")
+plt.ylabel(r"Convergence rate $b$ ($\varepsilon \propto b^n$)")
 plt.title(
     f"Convergence rate vs mass ({action} {lattice_size_str})\n"
     f"Models trained on {model_action} {model_lattice_size_str}"

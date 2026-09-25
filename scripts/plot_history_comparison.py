@@ -17,6 +17,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from docopt import docopt
+from matplotlib.lines import Line2D
 
 
 def parse_history_file(filepath):
@@ -44,7 +45,7 @@ def parse_history_file(filepath):
     )
 
 
-matplotlib.use("Agg")
+plt.style.use("./scripts/iclr2027.mplstyle")
 
 sys.path.insert(0, "scripts")
 
@@ -81,34 +82,66 @@ if not os.path.exists(history_path_HL):
 ) = parse_history_file(history_path_HL)
 
 # Create plot
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(4.5, 2.3))
 plt.plot(
     iterations_HC,
     train_costs_HC,
     color="#ee7733",
     linestyle="-",
-    label="HC model",
     linewidth=1,
+    zorder=3,
 )
-plt.scatter(test_iterations_HC, test_costs_HC, color="#ee7733", s=10)
+plt.scatter(test_iterations_HC, test_costs_HC, color="#ee7733", s=10, zorder=3)
 plt.plot(
     iterations_HL,
     train_costs_HL,
     color="#009988",
-    linestyle="-",
-    label="HL model",
+    linestyle="--",
     linewidth=1,
+    zorder=2,
 )
-plt.scatter(test_iterations_HL, test_costs_HL, color="#009988", s=10)
+plt.scatter(
+    test_iterations_HL,
+    test_costs_HL,
+    marker="D",
+    color="#009988",
+    s=10,
+    zorder=2,
+)
+
+hc_handle = Line2D(
+    [-1, 0, 1],
+    [0, 0, 0],
+    color="#ee7733",
+    linestyle="-",
+    linewidth=1,
+    marker="o",
+    markersize=np.sqrt(10),
+)
+hc_handle.set_markevery([1])  # Show marker only at the middle point
+
+hl_handle = Line2D(
+    [-1.5, 0, 1.5],
+    [0, 0, 0],
+    color="#009988",
+    linestyle="--",
+    linewidth=1,
+    marker="D",
+    markersize=np.sqrt(10),
+)
+hl_handle.set_markevery([1])
+
+plt.legend([hc_handle, hl_handle], ["HC model", "HL model"], handlelength=2)
 
 plt.xlabel("Iteration")
 plt.ylabel("Cost")
 plt.title(
-    f"Training History for {layers} layers, {action} {lattice_size_str}, mass={mass}\n"
+    f"Training History for {layers} layers, {action}\n"
+    r"$8^3\times16$"
+    rf", $m={float(mass):.1f}$, "
     f"HC vs HL Model"
 )
-plt.legend()
-plt.grid(True, alpha=0.3)
+plt.grid(True, which="both", alpha=0.5)
 plt.yscale("log")
 
 os.makedirs("plots/histories", exist_ok=True)
