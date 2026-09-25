@@ -139,6 +139,6 @@ for idx in range(2):
 os.makedirs("plots/histories", exist_ok=True)
 
 plt.savefig(
-    f"plots/histories/figure_history_comparison.pdf",
+    f"plots/histories/history_comparison.pdf",
     bbox_inches="tight",
 )
