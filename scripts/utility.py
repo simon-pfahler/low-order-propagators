@@ -36,7 +36,6 @@ def get_coefficients_from_weights(weights, path_length_min, path_length_max):
     contributions = {((), 0): torch.eye(4, dtype=torch.cdouble)}
 
     for n in range(len(weights)):
-        print(f"At layer {n}, {len(contributions)} contributions")
         weights_layer = torch.einsum(
             "njk,ion->iojk", generators, weights[f"weights.{n}"]
         )
