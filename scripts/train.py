@@ -17,12 +17,11 @@ Options:
 import os
 import sys
 
-import numpy as np
 import qcd_ml
 import torch
 from docopt import docopt
 from model import *
-from utility import get_config_paths, get_hopping_weights, model_paths
+from utility import get_config_paths, model_paths
 
 sys.path.insert(0, "scripts")
 
@@ -183,5 +182,7 @@ for t in range(training_steps + 1):
 
 # Save final weights
 torch.save(model.state_dict(), weights_path)
+
+f_history.close()
 
 print(f"Training complete. Weights saved to {weights_path}")

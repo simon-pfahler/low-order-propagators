@@ -1,4 +1,4 @@
-"""Print the formula obtained from restricted model weights.
+"""Print the coefficients obtained from an HC model.
 
 Usage:
     print_coefficients_HC.py --layers=<n> --model_type=<name> --action=<name> --lattice_size=<str> --mass=<mass> --path=<str>

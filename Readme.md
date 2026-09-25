@@ -17,6 +17,8 @@ snakemake convergence_rate
 snakemake coefficients_vs_layers
 ```
 
+More plots can be generated via the `scripts/plot*.py` scripts. Their use is documented in docstrings in each file.
+
 ## Individual steps
 ### Model Training
 The script `scripts/train.py` trains a model.
@@ -29,4 +31,4 @@ You should provide the number of layers (`--layers`), type (`--type`), action (`
 
 ### Approximation Coefficients
 The script `scripts/get_coefficients.py` extracts the coefficients of a model or the hopping expansion.
-You should provide the number of layers (`--layers`), type (`--type`), mass (`--mass`), and if extracting model coefficients, the action (`--model_action`) and lattice size (`--model_lattice_size`).
+You should provide the number of layers (`--layers`), type (`--type`), mass (`--mass`), and if extracting model coefficients, the action (`--action`) and lattice size (`--lattice_size`).
