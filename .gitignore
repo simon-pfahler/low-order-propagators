@@ -6,3 +6,5 @@
 !models/*
 !Snakefile
 !Readme.md
+!configs/
+!configs/**/*
