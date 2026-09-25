@@ -125,10 +125,10 @@ rule Qs_action_dependence:
             mass=MASSES,
         ),
         expand(
-            "data/Qs/Qs_4layers_{action}_8c16_{type}_{model_action}_8c16_m{mass}.pt",
+            "data/Qs/Qs_4layers_{model_action}_8c16_{type}_{action}_8c16_m{mass}.pt",
+            model_action=["WilsonQuenched", "WilsonDynamic", "Haar"],
             type=["HC", "restricted"],
             action=["WilsonQuenched", "WilsonDynamic", "Haar"],
-            model_action=["WilsonQuenched", "WilsonDynamic", "Haar"],
             mass=MASSES,
         ),
     output:
