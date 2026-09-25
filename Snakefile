@@ -125,7 +125,7 @@ rule Qs_action_dependence:
             mass=MASSES,
         ),
         expand(
-            "data/Qs/Qs_4layers_{type}_{action}_8c16_{type}_{model_action}_8c16_m{mass}.pt",
+            "data/Qs/Qs_4layers_{action}_8c16_{type}_{model_action}_8c16_m{mass}.pt",
             type=["HC", "restricted"],
             action=["WilsonQuenched", "WilsonDynamic", "Haar"],
             model_action=["WilsonQuenched", "WilsonDynamic", "Haar"],
@@ -145,7 +145,7 @@ rule Qs_volume_dependence:
             mass=MASSES,
         ),
         expand(
-            "data/Qs/Qs_4layers_{type}_WilsonQuenched_8c16_{type}_WilsonQuenched_{vol}_m{mass}.pt",
+            "data/Qs/Qs_4layers_WilsonQuenched_8c16_{type}_WilsonQuenched_{vol}_m{mass}.pt",
             type=["HC", "restricted"],
             vol=["8c16", "16c32"],
             mass=MASSES,
@@ -183,13 +183,13 @@ rule convergence_rate:
             type=["hopping", "GMRES"],
         ),
         expand(
-            "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
+            "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,2,3,4,6,8,12,16],
             mass=SMALL_MASSES,
             type=["HC", "restricted"],
         ),
         expand(
-            "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
+            "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,2,3,4,6],
             mass=LARGE_MASSES,
             type=["HC", "restricted"],
