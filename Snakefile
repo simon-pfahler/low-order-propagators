@@ -76,7 +76,7 @@ rule Qs_vs_layers:
     output:
         "plots/Qs/Qs_vs_layers.pdf",
     shell:
-        "python scripts/figure_coefficient_vs_layers_main.py"
+        "python scripts/figure_approximation_quality_vs_layers.py"
 
 rule coefficient_mass_dependence:
     input:
