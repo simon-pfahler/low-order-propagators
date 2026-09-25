@@ -161,7 +161,7 @@ for idx in range(2):
         ax[idx].set_title(
             rf"Dependence of $c_{{[],k}}$ on $m$, 4-layer restricted model"
         )
-    ax[idx].legend([r"$c_{[],1}$", "other", r"$\frac1{m+4}$"])
+    ax[idx].legend([r"$c_{[],1}$", r"$c_{[],k\ne1}$", r"$\frac1{m+4}$"])
     ax[idx].grid(True, which="both", linestyle="--", alpha=0.5)
 
 os.makedirs("plots/mass_dependence", exist_ok=True)
