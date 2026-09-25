@@ -197,7 +197,7 @@ rule convergence_rate:
     output:
         "plots/convergence/convergence_rate.pdf",
     shell:
-        "python scripts/figure_convergence_rate.py",
+        "python scripts/figure_convergence_rate.py"
 
 rule coefficients_vs_layers:
     input:
