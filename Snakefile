@@ -1,211 +1,227 @@
 import numpy as np
 
 # >>> Parameters
-LAYERS = [1,2,3,4,6,8]
-
-ALL_MODEL_TYPES=["HC", "HL", "restricted"]
-MODEL_TYPES=["HC", "restricted"]
-VOLUME="8c16"
-
 MASSES = [f"{m:.2f}" for m in np.arange(-5, 2.2, 0.2)]
-
-SEEDED_LAYERS=[1,2,3,4,6,8]
+SMALL_MASSES = [f"{m:.2f}" for m in np.arange(-5, -0.4, 0.2)]
+LARGE_MASSES = [f"{m:.2f}" for m in np.arange(-0.4, 2.2, 0.2)]
 SEEDED_MASSES = [f"{m:.2f}" for m in range(-5,3)]
 # <<< Parameters
-
-# >>> Helper functions
-MODEL_NAMES = []
-for model_type in MODEL_TYPES:
-    for layer in LAYERS:
-        MODEL_NAMES.append(f"{layer}layers_{VOLUME}_{model_type}")
-# <<< Helper functions
 
 # >>> Global wildcard constraints
 wildcard_constraints:
     layers=r"\d+",
 # <<< Global wildcard constraints
 
-# >>> Rules to aggregate results
-rule train_main:
+# >>> Rules to create figures
+rule all:
     input:
-        expand(
-            "data/weights/weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
-            layers=LAYERS,
-            action="WilsonQuenched",
-            lattice_size="8c16",
-            model_type=MODEL_TYPES,
-            mass=MASSES,
-        ),
-
-rule train_seeded_main:
-    input:
-        expand(
-            "data/weights/seeded_weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}_seed{seed}.pt",
-            layers=SEEDED_LAYERS,
-            action="WilsonQuenched",
-            lattice_size="8c16",
-            model_type=MODEL_TYPES,
-            mass=SEEDED_MASSES,
-            seed=range(5),
-        ),
-
-rule train_action_dependence:
-    input:
-        expand(
-            "data/weights/weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
-            layers=[2,4],
-            action=["WilsonQuenched", "WilsonDynamic", "Haar"],
-            lattice_size="8c16",
-            model_type=MODEL_TYPES,
-            mass=MASSES,
-        )
+        "plots/Qs/Qs_main.pdf",
+        "plots/Qs/Qs_vs_layers.pdf",
+        "plots/mass_dependence/coefficient_mass_dependence.pdf",
+        "plots/coefficients/coefficients_vs_layers_main.pdf",
+        "plots/histories/history_comparison.pdf",
+        "plots/Qs/Qs_action_dependence.pdf",
+        "plots/Qs/Qs_volume_dependence.pdf",
+        "plots/mass_dependence/coefficient_mass_dependence_pathlength0.pdf",
+        "plots/mass_dependence/coefficient_mass_dependence_pathlength1.pdf",
+        "plots/mass_dependence/coefficient_mass_dependence_pathlength2.pdf",
+        "plots/convergence/convergence_rate.pdf",
+        "plots/coefficients/coefficients_vs_layers_appendix_path[]_g0.pdf",
+        "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 1)]_g0.pdf",
+        "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 1)]_g1.pdf",
+        "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 1), (1, 1), (0, -1)]_g0.pdf",
+        "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 3)]_g0.pdf",
 
 rule Qs_main:
     input:
         expand(
-            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=LAYERS,
-            action="WilsonQuenched",
-            lattice_size="16c32",
-            model_action="WilsonQuenched",
-            model_lattice_size="8c16",
-            type=[*MODEL_TYPES],
+            "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m{mass}.pt",
+            layers=[1,4],
+            type=["hopping", "GMRES"],
             mass=MASSES,
         ),
         expand(
-            "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=LAYERS,
-            type=["hopping", "GMRES"],
-            action="WilsonQuenched",
-            lattice_size="16c32",
+            "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
+            layers=[1,4],
+            type=["HC", "restricted"],
             mass=MASSES,
         ),
+    output:
+        "plots/Qs/Qs_main.pdf",
+    shell:
+        "python scripts/figure_approximation_quality_main.py"
 
-rule Qs_volume_dependence:
+rule Qs_vs_layers:
     input:
         expand(
-            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=3,
-            action="WilsonQuenched",
-            lattice_size=["8c16", "16c32"],
-            model_action="WilsonQuenched",
-            model_lattice_size="8c16",
-            type=MODEL_TYPES,
+            "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m1.40.pt",
+            layers=[1,2,3,4,6],
+            type=["hopping", "GMRES"],
+        ),
+        expand(
+            "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m-3.00.pt",
+            layers=[1,2,3,4,6,8,12,16],
+            type=["hopping", "GMRES"],
+        ),
+        expand(
+            "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m1.40.pt",
+            layers=[1,2,3,4,6],
+            type=["HC", "restricted"],
+        ),
+        expand(
+            "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m-3.00.pt",
+            layers=[1,2,3,4,6,8,12,16],
+            type=["HC", "restricted"],
+        ),
+    output:
+        "plots/Qs/Qs_vs_layers.pdf",
+    shell:
+        "python scripts/figure_coefficient_vs_layers_main.py"
+
+rule coefficient_mass_dependence:
+    input:
+        "data/coefficients/coefficients_4layers_hopping_m1.00.pt",
+        expand(
+            "data/coefficients/coefficients_4layers_WilsonQuenched_8c16_{type}_m{mass}.pt",
+            type=["HC", "restricted"],
             mass=MASSES,
         ),
+    output:
+        "plots/mass_dependence/coefficient_mass_dependence.pdf",
+    shell:
+        "python scripts/figure_coefficient_mass_dependence_main.py"
+
+rule coefficients_vs_layers_main:
+    input:
+        "data/coefficients/coefficients_4layers_hopping_m-3.00.pt",
+        expand(
+            "data/coefficients/seeded_coefficients_{layers}layers_WilsonQuenched_8c16_HC_m-3.00_seed{seed}.pt",
+            layers=[1,2,3,4,6,8,12,16],
+            seed=range(5),
+        ),
+    output:
+        "plots/coefficients/coefficients_vs_layers_main.pdf",
+    shell:
+        "python scripts/figure_coefficient_vs_layers_main.py"
+
+rule history_comparison:
+    input:
+        expand(
+            "data/histories/history_{layers}layers_WilsonQuenched_8c16_{type}_m-0.80.txt",
+            layers=[1,4],
+            type=["HC", "HL"],
+        ),
+    output:
+        "plots/histories/history_comparison.pdf",
+    shell:
+        "python scripts/figure_history_comparison.py"
 
 rule Qs_action_dependence:
     input:
         expand(
-            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=[2,4],
+            "data/Qs/Qs_4layers_{type}_{action}_8c16_m{mass}.pt",
+            type=["hopping", "GMRES"],
             action=["WilsonQuenched", "WilsonDynamic", "Haar"],
-            lattice_size="8c16",
-            model_action=["WilsonQuenched", "Haar"],
-            model_lattice_size="8c16",
-            type=MODEL_TYPES,
-            mass=MASSES,
-        ),
-
-rule coefficients_main:
-    input:
-        expand(
-            "data/coefficients/coefficients_{layers}layers_{model_action}_{model_lattice_size}_{type}_m{mass}.pt",
-            layers=LAYERS,
-            model_action="WilsonQuenched",
-            model_lattice_size="8c16",
-            type=MODEL_TYPES,
             mass=MASSES,
         ),
         expand(
-            "data/coefficients/coefficients_{layers}layers_{type}_m{mass}.pt",
-            layers=4,
-            type="hopping",
-            mass=MASSES,
-        ),
-
-rule plot_Q_mass_dependence_main:
-    input:
-        expand(
-            "plots/Qs/Qs_{layers}layers_WilsonQuenched_16c32_WilsonQuenched_8c16.pdf",
-            layers=LAYERS,
-        ),
-
-rule plot_Q_layer_dependence_main:
-    input:
-        expand(
-            "plots/Qs/Qs_vs_layers_WilsonQuenched_16c32_WilsonQuenched_8c16_m{mass}.pdf",
-            mass=MASSES,
-        ),
-
-rule plot_Q_mass_dependence_volume_dependence:
-    input:
-        expand(
-            "plots/Qs/Qs_3layers_WilsonQuenched_{lattice_size}_WilsonQuenched_8c16.pdf",
-            lattice_size=["8c16", "16c32"],
-        ),
-
-rule plot_Q_mass_dependence_action_dependence:
-    input:
-        expand(
-            "plots/Qs/Qs_{layers}layers_{action}_8c16_{model_action}_8c16.pdf",
-            layers=[2,4],
+            "data/Qs/Qs_4layers_{type}_{action}_8c16_{type}_{model_action}_8c16_m{mass}.pt",
+            type=["HC", "restricted"],
             action=["WilsonQuenched", "WilsonDynamic", "Haar"],
             model_action=["WilsonQuenched", "WilsonDynamic", "Haar"],
+            mass=MASSES,
         ),
+    output:
+        "plots/Qs/Qs_action_dependence.pdf",
+    shell:
+        "python scripts/figure_approximation_quality_action_dependence.py"
 
-rule plot_coefficients_mass_dependence_main:
+rule Qs_volume_dependence:
     input:
         expand(
-            "plots/mass_dependence/mass_dependence_{layers}layers_{model_type}_{action}_{lattice_size}_pathlength{path_length}.pdf",
-            layers=LAYERS,
-            model_type=MODEL_TYPES,
-            action="WilsonQuenched",
-            lattice_size="8c16",
-            path_length=range(5),
-        )
-
-rule plot_history_comparison_main:
-    input:
-        expand(
-            "plots/histories/history_comparison_{layers}layers_WilsonQuenched_8c16_m-0.80.pdf",
-            layers=LAYERS,
+            "data/Qs/Qs_4layers_{type}_WilsonQuenched_{vol}_m{mass}.pt",
+            type=["hopping", "GMRES"],
+            vol=["8c16", "16c32"],
+            mass=MASSES,
         ),
+        expand(
+            "data/Qs/Qs_4layers_{type}_WilsonQuenched_8c16_{type}_WilsonQuenched_{vol}_m{mass}.pt",
+            type=["HC", "restricted"],
+            vol=["8c16", "16c32"],
+            mass=MASSES,
+        ),
+    output:
+        "plots/Qs/Qs_volume_dependence.pdf",
+    shell:
+        "python scripts/figure_approximation_quality_volume_dependence.py"
 
-rule plot_convergence_rate_main:
+rule coefficient_mass_dependence_pathlength:
     input:
-        "plots/pdf/convergence/convergence_rate_WilsonQuenched_16c32_WilsonQuenched_8c16.pdf",
+        "data/coefficients/coefficients_4layers_hopping_m1.00.pt",
+        expand(
+            "data/coefficients/coefficients_{layers}layers_WilsonQuenched_8c16_HC_m{mass}.pt",
+            layers=[1,2,3,4],
+            mass=MASSES,
+        ),
+    output:
+        "plots/mass_dependence/coefficient_mass_dependence_pathlength{pathlength}.pdf",
+    shell:
+        "python scripts/figure_coefficient_mass_dependence_appendix.py --path_length={wildcards.pathlength}"
 
-rule plot_coefficient_vs_layers_main:
+rule convergence_rate:
     input:
         expand(
-            "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
-            model_type=["HC", "restricted"],
-            action="WilsonQuenched",
-            lattice_size="8c16",
-            path="[]",
-            gamma_index=[0],
+            "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m{mass}.pt",
+            layers=[1,2,3,4,6,8,12,16],
+            mass=SMALL_MASSES,
+            type=["hopping", "GMRES"],
+        ),
+        expand(
+            "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m{mass}.pt",
+            layers=[1,2,3,4,6],
+            mass=LARGE_MASSES,
+            type=["hopping", "GMRES"],
+        ),
+        expand(
+            "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
+            layers=[1,2,3,4,6,8,12,16],
+            mass=SMALL_MASSES,
+            type=["HC", "restricted"],
+        ),
+        expand(
+            "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
+            layers=[1,2,3,4,6],
+            mass=LARGE_MASSES,
+            type=["HC", "restricted"],
+        ),
+    output:
+        "plots/convergence/convergence_rate.pdf",
+    shell:
+        "python scripts/figure_convergence_rate.py",
+
+rule coefficients_vs_layers:
+    input:
+        expand(
+            "data/coefficients/seeded_coefficients_{layers}layers_WilsonQuenched_8c16_restricted_m{mass}_seed{seed}.pt",
+            layers=[1,2,3,4,6],
+            mass=SEEDED_MASSES,
+            seed=range(5),
+        ),
+        expand(
+            "data/coefficients/seeded_coefficients_{layers}layers_WilsonQuenched_8c16_HC_m{mass}_seed{seed}.pt",
+            layers=[1,2,3,4,6,8,12,16],
+            mass=SEEDED_MASSES,
+            seed=range(5),
+        ),
+        expand(
+            "data/coefficients/coefficients_4layers_hopping_m{mass}.pt",
             mass=SEEDED_MASSES,
         ),
-        expand(
-            "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
-            model_type=["HC", "restricted"],
-            action="WilsonQuenched",
-            lattice_size="8c16",
-            path=["[(0,1)]", "[(0,2)]"],
-            gamma_index=[0,1],
-            mass=SEEDED_MASSES,
-        ),
-        expand(
-            "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
-            model_type=["HC", "restricted"],
-            action="WilsonQuenched",
-            lattice_size="8c16",
-            path="[(0,1),(1,1)]",
-            gamma_index=[0,1,2],
-            mass=SEEDED_MASSES,
-        ),
-# <<< Rules to aggregate results
+    output:
+        "plots/coefficients/coefficients_vs_layers_appendix_path{path}_g{gamma_index}.pdf",
+    shell:
+        "python scripts/figure_coefficient_vs_layers_appendix.py --path='{wildcards.path}' --gamma_index={wildcards.gamma_index}"
+# <<< Rules to create figures
 
 rule train:
     threads: 8
@@ -232,8 +248,7 @@ rule get_Qs_model:
     resources:
         cores = 8
     input:
-        lambda wildcards:
-            "data/weights/weights_{layers}layers_{model_action}_{model_lattice_size}_{type}_m{mass}.pt" if wildcards.type in ALL_MODEL_TYPES else []
+        "data/weights/weights_{layers}layers_{model_action}_{model_lattice_size}_{type}_m{mass}.pt"
     output:
         "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
     wildcard_constraints:
@@ -288,141 +303,3 @@ rule get_coefficients_hopping:
         type="hopping",
     shell:
         "python scripts/get_coefficients.py --layers={wildcards.layers} --type={wildcards.type} --mass={wildcards.mass}"
-
-rule plot_Q_mass_dependence:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        lambda wildcards: expand(
-            "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=wildcards.layers,
-            type=["hopping", "GMRES"],
-            action=wildcards.action,
-            lattice_size=wildcards.lattice_size,
-            mass=MASSES,
-        ),
-        lambda wildcards: expand(
-            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=wildcards.layers,
-            type=MODEL_TYPES,
-            model_action=wildcards.model_action,
-            model_lattice_size=wildcards.model_lattice_size,
-            action=wildcards.action,
-            lattice_size=wildcards.lattice_size,
-            mass=MASSES,
-        ),
-    output:
-        "plots/Qs/Qs_{layers}layers_{action}_{lattice_size}_{model_action}_{model_lattice_size}.pdf",
-    shell:
-        "python scripts/plot_approximation_quality.py --layers={wildcards.layers} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size}"
-
-rule plot_Q_layer_dependence:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        lambda wildcards: expand(
-            "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=LAYERS,
-            type=["hopping", "GMRES"],
-            action=wildcards.action,
-            lattice_size=wildcards.lattice_size,
-            mass=wildcards.mass,
-        ),
-        lambda wildcards: expand(
-            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=LAYERS,
-            type=MODEL_TYPES,
-            model_action=wildcards.model_action,
-            model_lattice_size=wildcards.model_lattice_size,
-            action=wildcards.action,
-            lattice_size=wildcards.lattice_size,
-            mass=wildcards.mass,
-        ),
-    output:
-        "plots/Qs/Qs_vs_layers_{action}_{lattice_size}_{model_action}_{model_lattice_size}_m{mass}.pdf",
-    shell:
-        "python scripts/plot_approximation_quality_vs_layers.py --mass={wildcards.mass} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size}"
-    
-rule plot_mass_dependence_coefficients:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        lambda wildcards: expand(
-            "data/coefficients/coefficients_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
-            layers=LAYERS,
-            action=wildcards.action,
-            lattice_size=wildcards.lattice_size,
-            model_type=wildcards.model_type,
-            mass=MASSES,
-        ),
-        "data/coefficients/coefficients_4layers_hopping_m1.00.pt",
-    output:
-        "plots/mass_dependence/mass_dependence_{layers}layers_{model_type}_{action}_{lattice_size}_pathlength{path_length}.pdf",
-    shell:
-        "python scripts/plot_mass_dependence_coefficients.py --layers={wildcards.layers} --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --path_length={wildcards.path_length}"
-
-rule plot_convergence_rate:
-    threads: 4
-    resources:
-        cores = 4
-    input:
-        lambda wildcards: expand(
-            "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=LAYERS,
-            type=["hopping", "GMRES"],
-            action=wildcards.action,
-            lattice_size=wildcards.lattice_size,
-            mass=MASSES,
-        ),
-        lambda wildcards: expand(
-            "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
-            layers=LAYERS,
-            type=MODEL_TYPES,
-            model_action=wildcards.model_action,
-            model_lattice_size=wildcards.model_lattice_size,
-            action=wildcards.action,
-            lattice_size=wildcards.lattice_size,
-            mass=MASSES,
-        ),
-    output:
-        "plots/pdf/convergence/convergence_rate_{action}_{lattice_size}_{model_action}_{model_lattice_size}.pdf",
-    shell:
-        "python scripts/plot_convergence_rate.py --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size}"
-
-rule plot_history_comparison:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        "data/histories/history_{layers}layers_{action}_{lattice_size}_HC_m{mass}.txt",
-        "data/histories/history_{layers}layers_{action}_{lattice_size}_HL_m{mass}.txt",
-    output:
-        "plots/histories/history_comparison_{layers}layers_{action}_{lattice_size}_m{mass}.pdf",
-    shell:
-        "python scripts/plot_history_comparison.py --layers={wildcards.layers} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
-
-rule plot_coefficient_vs_layers:
-    threads: 1
-    resources:
-        cores = 1
-    input:
-        lambda wildcards: expand(
-            "data/coefficients/seeded_coefficients_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}_seed{seed}.pt",
-            layers=SEEDED_LAYERS,
-            action=wildcards.action,
-            lattice_size=wildcards.lattice_size,
-            model_type=wildcards.model_type,
-            mass=wildcards.mass,
-            seed=range(5),
-        ),
-        lambda wildcards: expand(
-            "data/coefficients/coefficients_4layers_hopping_m{mass}.pt",
-            mass=wildcards.mass,
-        ),
-    output:
-        "plots/coefficients/coefficients_vs_layers_{model_type}_{action}_{lattice_size}_p{path}_g{gamma_index}_m{mass}.pdf",
-    shell:
-        "python scripts/plot_coefficient_vs_layers.py --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass} --path='{wildcards.path}' --gamma_index={wildcards.gamma_index}"
