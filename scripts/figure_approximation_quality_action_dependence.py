@@ -92,8 +92,9 @@ for train in range(3):
             yerr=stds_hopping,
             linestyle="none",
             color="#33bbee",
-            capsize=5,
+            capsize=4,
             marker="o",
+            markersize=4,
             markerfacecolor="none",
             label="Hopping expansion",
         )
@@ -103,8 +104,9 @@ for train in range(3):
             yerr=stds_GMRES,
             linestyle="none",
             color="#ee3377",
-            capsize=5,
+            capsize=4,
             marker="^",
+            markersize=4,
             markerfacecolor="none",
             label="GMRES",
         )
@@ -114,8 +116,9 @@ for train in range(3):
             yerr=stds_restricted,
             linestyle="none",
             color="#0077bb",
-            capsize=5,
+            capsize=4,
             marker="D",
+            markersize=4,
             markerfacecolor="none",
             label="Restricted model",
         )
@@ -125,8 +128,9 @@ for train in range(3):
             yerr=stds_HC,
             linestyle="none",
             color="#ee7733",
-            capsize=5,
+            capsize=4,
             marker="s",
+            markersize=4,
             markerfacecolor="none",
             label="HC model",
         )

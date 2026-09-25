@@ -201,7 +201,6 @@ plt.errorbar(
 
 plt.xlabel("Mass")
 plt.ylabel(r"Convergence rate $b$ ($\varepsilon \propto b^n$)")
-plt.title(f"Convergence rate vs mass")
 plt.ylim(0, 1)
 plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)

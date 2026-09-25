@@ -168,7 +168,9 @@ for layers in range(1, 5):
             ymax = max(ymax, torch.max(s).item())
             ymin = min(ymin, torch.min(s).item())
 
-        ax[layers].scatter(m, s, zorder=10 - idx, c=colors[idx])
+        ax[layers].scatter(
+            m, s, zorder=10 - idx, s=6, c=colors[idx], rasterized=True
+        )
 
     for factor in range(path_length):
         ax[layers].plot(
@@ -204,7 +206,7 @@ for layers in range(1, 5):
         ax[layers].set_title(
             rf"Dependence of $c_{{[],k}}$ on $m$, {layers} {layertext}"
         )
-        ax[layers].legend([r"$c_{[],1}$", "other", r"$\frac1{m+4}$"])
+        ax[layers].legend([r"$c_{[],1}$", "others", r"$\frac1{m+4}$"])
     elif path_length == 1:
         ax[layers].set_ylim(-0.08, 0.11)
         ax[layers].set_title(
@@ -214,7 +216,7 @@ for layers in range(1, 5):
             [
                 r"$c_{[(\pm\mu,1)],1}$",
                 r"$c_{[(\pm\mu,1)],\gamma_\mu}$",
-                "other",
+                "others",
                 r"$\frac1{2(m+4)^2}$",
             ]
         )
@@ -235,7 +237,7 @@ for layers in range(1, 5):
                 r"$c_{[(\pm\mu,1),(\pm\nu,1)],1}$",
                 r"$c_{[(\pm\mu,1),(\pm\nu,1)],\gamma_\mu}$",
                 r"$c_{[(\pm\mu,1),(\pm\nu,1)],\gamma_\nu}$",
-                "other",
+                "others",
                 "hopping",
             ],
             loc="lower right",
@@ -247,4 +249,5 @@ os.makedirs("plots/mass_dependence", exist_ok=True)
 plt.savefig(
     f"plots/mass_dependence/coefficient_mass_dependence_pathlength{path_length}.pdf",
     bbox_inches="tight",
+    dpi=600,
 )

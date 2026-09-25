@@ -133,7 +133,9 @@ for idx in range(2):
             ymax = max(ymax, torch.max(s).item())
             ymin = min(ymin, torch.min(s).item())
 
-        ax[idx].scatter(m, s, zorder=10 - jdx, c=colors[jdx])
+        ax[idx].scatter(
+            m, s, zorder=10 - jdx, s=6, rasterized=True, c=colors[jdx]
+        )
 
     for factor in range(path_length):
         ax[idx].plot(
@@ -169,4 +171,5 @@ os.makedirs("plots/mass_dependence", exist_ok=True)
 plt.savefig(
     f"plots/mass_dependence/coefficient_mass_dependence.pdf",
     bbox_inches="tight",
+    dpi=600,
 )
