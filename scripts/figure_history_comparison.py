@@ -130,8 +130,10 @@ for idx in range(2):
     ax[idx].set_xlabel("Iteration")
     if idx == 0:
         ax[idx].set_ylabel("Cost")
+    layerstext = "layer" if idx == 0 else "layers"
     ax[idx].set_title(
-        f"Training history for {layers} layers, " rf"$m={float(mass):.1f}$"
+        f"Training history for {layers} {layerstext}, "
+        rf"$m={float(mass):.1f}$"
     )
     ax[idx].grid(True, which="both", alpha=0.5)
     ax[idx].set_yscale("log")
