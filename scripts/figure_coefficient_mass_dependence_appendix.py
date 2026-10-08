@@ -60,6 +60,7 @@ masses = sorted(
         if not f.startswith("seeded")
     )
 )
+masses.remove(-9.0)
 
 # Get hopping coefficients for mass 1
 hopping_coefficients = {

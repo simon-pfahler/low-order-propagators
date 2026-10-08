@@ -130,8 +130,9 @@ class Model_restricted(torch.nn.Module):
     def forward(self, v, U):
         pt = [PathBuffer(U, pi) for pi in self.paths]
 
+        transported_v = torch.clone(v)
         for i in range(self.nlayers):
-            v_pts = [pti.v_transport(v) for pti in pt]
+            v_pts = [pti.v_transport(transported_v) for pti in pt]
 
             curr_terms = torch.zeros_like(v)
             for mu in range(4):
@@ -149,6 +150,7 @@ class Model_restricted(torch.nn.Module):
                 curr_terms += torch.einsum(
                     "ij,...jc->...ic", w_minus, v_pts[2 * mu + 2]
                 )
+            transported_v = curr_terms
             v = v + curr_terms
 
         return self.overall_factor * v

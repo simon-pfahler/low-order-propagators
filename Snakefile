@@ -1,10 +1,11 @@
 import numpy as np
 
 # >>> Parameters
-MASSES = [f"{m:.2f}" for m in np.arange(-5, 2.2, 0.2)]
+MASSES = ["-9.00"] + [f"{m:.2f}" for m in np.arange(-5, 2.2, 0.2)]
 SMALL_MASSES = [f"{m:.2f}" for m in np.arange(-5, -0.4, 0.2)]
-LARGE_MASSES = [f"{m:.2f}" for m in np.arange(-0.4, 2.2, 0.2)]
+LARGE_MASSES = ["-9.00"] + [f"{m:.2f}" for m in np.arange(-0.4, 2.2, 0.2)]
 SEEDED_MASSES = [f"{m:.2f}" for m in range(-5,3)]
+SEEDED_MASSES = MASSES
 # <<< Parameters
 
 # >>> Global wildcard constraints
@@ -203,7 +204,7 @@ rule coefficients_vs_layers:
     input:
         expand(
             "data/coefficients/seeded_coefficients_{layers}layers_WilsonQuenched_8c16_restricted_m{mass}_seed{seed}.pt",
-            layers=[1,2,3,4,6],
+            layers=[1,2,3,4,6,8,12,16],
             mass=SEEDED_MASSES,
             seed=range(5),
         ),

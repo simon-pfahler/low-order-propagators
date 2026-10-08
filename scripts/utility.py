@@ -157,7 +157,7 @@ def get_weights_from_restricted(weights_dict_restricted):
             weights[f"weights.{nlayers}"] = torch.zeros(
                 len(model_paths), 1, 16, dtype=torch.cdouble
             )
-        weights[f"weights.{n}"][0, :, 0] = 1
+        weights[f"weights.{n}"][0, 0, 0] = 1
         for mu in range(4):
             weights[f"weights.{n}"][2 * mu + 1, :, 0] = weights_dict_restricted[
                 "weights"

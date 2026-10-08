@@ -111,7 +111,7 @@ match model_type:
 
 
 def Q(w, winv_approx, x):
-    return qcd_ml.util.linear_algebra.norm(w(winv_approx(x)) - x)
+    return qcd_ml.util.linear_algebra.norm(winv_approx(w(x)) - x)
 
 
 Qs = torch.zeros(len(test_ws), 100)

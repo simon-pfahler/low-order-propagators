@@ -71,6 +71,7 @@ factors_GMRES_err = []
 
 # Find all masses
 masses = sorted(set(extract_mass(f) for f in os.listdir("data/Qs")))
+masses.remove(-9.0)
 
 # Find all layers
 layerss = sorted(set(extract_layers(f) for f in os.listdir("data/Qs")))

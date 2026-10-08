@@ -43,14 +43,6 @@ weightss = [
 overall_factors = torch.stack([w["overall_factor"] for w in weightss])
 layer_weights = torch.stack([w["weights"] for w in weightss])
 
-for seed in range(nrseeds):
-    for l in range(layers):
-        layer = layer_weights[seed][l]
-        all_angles = layer.angle()
-        angle = torch.mean(all_angles)
-        layer_weights[seed][l] *= torch.exp(-1j * angle)
-        overall_factors[seed] *= torch.exp(1j * angle)
-
 overall_factor_mean = torch.mean(overall_factors)
 layer_weights_mean = torch.mean(layer_weights, dim=0)
 overall_factor_std_real = torch.std(overall_factors.real)

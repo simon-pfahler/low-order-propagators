@@ -48,6 +48,7 @@ for train in range(3):
 
         # Find all masses
         masses = sorted(set(extract_mass(f) for f in os.listdir("data/Qs")))
+        masses.remove(-9.0)
 
         # Aggregate all available Qs data
         for mass in masses:

@@ -172,9 +172,11 @@ improvements_restricted = torch.tensor(
     ]
 )
 
+threshold_idx = masses.index(-0.4)
+
 print(
-    f"Relative improvement between HC and best baseline: {100*torch.mean(improvements_HC):.2f}% ({100*torch.mean(improvements_HC[:23]):.2f}% below m_h, {100*torch.mean(improvements_HC[23:]):.2f}% above m_h)"
+    f"Relative improvement between HC and best baseline: {100*torch.mean(improvements_HC):.2f}% ({100*torch.mean(improvements_HC[:threshold_idx]):.2f}% below m=-0.5, {100*torch.mean(improvements_HC[threshold_idx:]):.2f}% above m=-0.5)"
 )
 print(
-    f"Relative improvement between restricted and best baseline: {100*torch.mean(improvements_restricted):.2f}% ({100*torch.mean(improvements_restricted[:23]):.2f}% below m_h, {100*torch.mean(improvements_restricted[23:]):.2f}% above m_h)"
+    f"Relative improvement between restricted and best baseline: {100*torch.mean(improvements_restricted):.2f}% ({100*torch.mean(improvements_restricted[:threshold_idx]):.2f}% below m=-0.5, {100*torch.mean(improvements_restricted[threshold_idx:]):.2f}% above m=-0.5)"
 )
