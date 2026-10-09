@@ -187,6 +187,6 @@ class PolyH(torch.nn.Module):
                     "ij,...jc->...ic", w_minus, v_pts[2 * mu + 2]
                 )
             transported_v = self.weights[i + 1] * curr_terms
-            v = v + curr_terms
+            v = v + transported_v
 
         return v
