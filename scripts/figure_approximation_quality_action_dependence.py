@@ -109,7 +109,7 @@ for train in range(3):
             marker="^",
             markersize=4,
             markerfacecolor="none",
-            label="PolyH",
+            label="Optimal Polynomial",
         )
         ax[test][train].errorbar(
             masses_restricted,

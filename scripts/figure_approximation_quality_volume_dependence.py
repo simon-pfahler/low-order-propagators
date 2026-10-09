@@ -104,7 +104,7 @@ for idx in range(2):
         capsize=5,
         marker="^",
         markerfacecolor="none",
-        label="PolyH",
+        label="Optimal Polynomial",
     )
     ax[idx].errorbar(
         masses_restricted,
