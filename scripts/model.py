@@ -186,7 +186,7 @@ class PolyH(torch.nn.Module):
                 curr_terms += torch.einsum(
                     "ij,...jc->...ic", w_minus, v_pts[2 * mu + 2]
                 )
-            transported_v = curr_terms
-            v = v + self.weights[i + 1] * curr_terms
+            transported_v = self.weights[i + 1] * curr_terms
+            v = v + curr_terms
 
         return v
