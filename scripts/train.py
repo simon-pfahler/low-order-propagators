@@ -89,9 +89,12 @@ match model_type:
         model = PolyH(layers, model_paths)
         for p in model.parameters():
             p.data *= 1e-4
-        kappa = 1 / (2 * mass + 8)
-        model.weights.data += kappa
-        model.weights.data[0] += kappa
+        if mass > -0.5:
+            kappa = 1 / (2 * mass + 8)
+            model.weights.data += kappa
+            model.weights.data[0] += kappa
+        else:
+            model.weights.data[0] += 1
     case _:
         model = Model_HL(layers, model_paths)
         for p in model.parameters():
