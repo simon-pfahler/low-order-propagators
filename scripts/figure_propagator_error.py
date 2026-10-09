@@ -26,6 +26,8 @@ model_lattice_size_str = "8c16"
 
 masses = [-5, -4, -3, -2, -1, 0, 1, 2]
 
+data_GMRES_mean = torch.nan * torch.zeros(len(masses))
+data_GMRES_std = torch.nan * torch.zeros(len(masses))
 data_hopping_mean = torch.nan * torch.zeros(len(masses))
 data_hopping_std = torch.nan * torch.zeros(len(masses))
 data_hc_mean = torch.nan * torch.zeros(len(masses))
@@ -34,17 +36,25 @@ data_restricted_mean = torch.nan * torch.zeros(len(masses))
 data_restricted_std = torch.nan * torch.zeros(len(masses))
 
 for mass_idx, mass in enumerate(masses):
+    gmres_path = f"data/propagators/timesliced_errors_{layers}layers_GMRES_WilsonQuenched_8c16_m{mass:.2f}.pt"
     hopping_path = f"data/propagators/timesliced_errors_{layers}layers_hopping_WilsonQuenched_8c16_m{mass:.2f}.pt"
     hc_path = f"data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_HC_WilsonQuenched_8c16_m{mass:.2f}.pt"
     restricted_path = f"data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_restricted_WilsonQuenched_8c16_m{mass:.2f}.pt"
 
     try:
+        data_GMRES_mass = torch.load(gmres_path, weights_only=True)
         data_hopping_mass = torch.load(hopping_path, weights_only=True)
         data_hc_mass = torch.load(hc_path, weights_only=True)
         data_restricted_mass = torch.load(restricted_path, weights_only=True)
     except:
         continue
 
+    data_GMRES_mass = (
+        torch.einsum(
+            "...t,...t->...", data_GMRES_mass.conj(), data_GMRES_mass
+        ).real
+        ** 0.5
+    )
     data_hopping_mass = (
         torch.einsum(
             "...t,...t->...", data_hopping_mass.conj(), data_hopping_mass
@@ -78,15 +88,19 @@ for mass_idx, mass in enumerate(masses):
                     ).real
                     ** 0.5
                 )
+                data_GMRES_mass[idx, spin_idx, color_idx] /= norm
                 data_hopping_mass[idx, spin_idx, color_idx] /= norm
                 data_hc_mass[idx, spin_idx, color_idx] /= norm
+                data_restricted_mass[idx, spin_idx, color_idx] /= norm
 
+    data_GMRES_mean[mass_idx] = torch.mean(data_GMRES_mass)
+    data_GMRES_std[mass_idx] = torch.std(data_GMRES_mass)
     data_hopping_mean[mass_idx] = torch.mean(data_hopping_mass)
     data_hopping_std[mass_idx] = torch.std(data_hopping_mass)
     data_hc_mean[mass_idx] = torch.mean(data_hc_mass)
     data_hc_std[mass_idx] = torch.std(data_hc_mass)
-    data_restricted_mean[mass_idx] = torch.mean(data_hc_mass)
-    data_restricted_std[mass_idx] = torch.std(data_hc_mass)
+    data_restricted_mean[mass_idx] = torch.mean(data_restricted_mass)
+    data_restricted_std[mass_idx] = torch.std(data_restricted_mass)
 
 plt.errorbar(
     masses,
@@ -98,6 +112,18 @@ plt.errorbar(
     marker="o",
     markerfacecolor="none",
     label="Hopping expansion",
+)
+plt.errorbar(
+    masses,
+    data_GMRES_mean,
+    yerr=data_GMRES_std,
+    linestyle="none",
+    color="#ee3377",
+    capsize=4,
+    marker="^",
+    markersize=4,
+    markerfacecolor="none",
+    label="GMRES",
 )
 plt.errorbar(
     masses,

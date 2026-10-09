@@ -32,9 +32,13 @@ rule all:
         "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 1)]_g1.pdf",
         "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 1), (1, 1), (0, -1)]_g0.pdf",
         "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 3)]_g0.pdf",
-        "plots/propagator/propagator_error_1layers.pdf",
-        "plots/propagator/propagator_error_4layers.pdf",
+        expand(
+            "plots/propagator/propagator_error_{layers}layers.pdf",
+            layers=[1,2,3,4,6,8,12,16],
+        ),
         "plots/propagator/propagator_timesliced_error_4layers_m-1.00.pdf",
+        "plots/propagator/propagator_timesliced_error_16layers_m-1.00.pdf",
+        "plots/propagator/propagator_timesliced_error_16layers_m-3.00.pdf",
 
 rule Qs_main:
     input:
@@ -231,8 +235,9 @@ rule propagator_errors:
             mass=[f"{m:.2f}" for m in range(-5,3)],
         ),
         expand(
-            "data/propagators/timesliced_errors_{{layers}}layers_hopping_WilsonQuenched_8c16_m{mass}.pt",
+            "data/propagators/timesliced_errors_{{layers}}layers_{type}_WilsonQuenched_8c16_m{mass}.pt",
             mass=[f"{m:.2f}" for m in range(-5,3)],
+            type=["hopping", "GMRES"],
         ),
         expand(
             "data/propagators/timesliced_errors_{{layers}}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_8c16_m{mass}.pt",
@@ -252,6 +257,7 @@ rule propagator_timesliced_errors:
             spin_idx=range(4),
             color_idx=range(3),
         ),
+        "data/propagators/timesliced_errors_{layers}layers_GMRES_WilsonQuenched_8c16_m{mass}.pt",
         "data/propagators/timesliced_errors_{layers}layers_hopping_WilsonQuenched_8c16_m{mass}.pt",
         "data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_HC_WilsonQuenched_8c16_m{mass}.pt",
         "data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_restricted_WilsonQuenched_8c16_m{mass}.pt",

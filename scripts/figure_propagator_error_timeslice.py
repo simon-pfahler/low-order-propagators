@@ -27,10 +27,12 @@ lattice_size_str = "8c16"
 model_action = "WilsonQuenched"
 model_lattice_size_str = "8c16"
 
+gmres_path = f"data/propagators/timesliced_errors_{layers}layers_GMRES_WilsonQuenched_8c16_m{mass:.2f}.pt"
 hopping_path = f"data/propagators/timesliced_errors_{layers}layers_hopping_WilsonQuenched_8c16_m{mass:.2f}.pt"
 hc_path = f"data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_HC_WilsonQuenched_8c16_m{mass:.2f}.pt"
 restricted_path = f"data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_restricted_WilsonQuenched_8c16_m{mass:.2f}.pt"
 
+data_gmres = torch.load(gmres_path, weights_only=True)
 data_hopping = torch.load(hopping_path, weights_only=True)
 data_hc = torch.load(hc_path, weights_only=True)
 data_restricted = torch.load(restricted_path, weights_only=True)
@@ -51,16 +53,19 @@ for idx in range(4):
                 ).real
                 ** 0.5
             )
+            data_gmres[idx, spin_idx, color_idx] /= timesliced_norm
             data_hopping[idx, spin_idx, color_idx] /= timesliced_norm
             data_hc[idx, spin_idx, color_idx] /= timesliced_norm
             data_restricted[idx, spin_idx, color_idx] /= timesliced_norm
 
+data_gmres_mean = torch.mean(data_gmres, [0, 1, 2])
+data_gmres_std = torch.std(data_gmres, [0, 1, 2])
 data_hopping_mean = torch.mean(data_hopping, [0, 1, 2])
 data_hopping_std = torch.std(data_hopping, [0, 1, 2])
 data_hc_mean = torch.mean(data_hc, [0, 1, 2])
 data_hc_std = torch.std(data_hc, [0, 1, 2])
-data_restricted_mean = torch.mean(data_hc, [0, 1, 2])
-data_restricted_std = torch.std(data_hc, [0, 1, 2])
+data_restricted_mean = torch.mean(data_restricted, [0, 1, 2])
+data_restricted_std = torch.std(data_restricted, [0, 1, 2])
 
 plt.errorbar(
     torch.arange(data_hopping_mean.shape[0] + 1),
@@ -72,6 +77,18 @@ plt.errorbar(
     marker="o",
     markerfacecolor="none",
     label="Hopping expansion",
+)
+plt.errorbar(
+    torch.arange(data_gmres_mean.shape[0] + 1),
+    list(data_gmres_mean) + [data_gmres_mean[0]],
+    yerr=list(data_gmres_std) + [data_gmres_std[0]],
+    linestyle="none",
+    color="#ee3377",
+    capsize=4,
+    marker="^",
+    markersize=4,
+    markerfacecolor="none",
+    label="GMRES",
 )
 plt.errorbar(
     torch.arange(data_restricted_mean.shape[0] + 1),
@@ -105,6 +122,9 @@ plt.title(
 )
 plt.xticks([0, 4, 8, 12, 16])
 plt.yscale("log")
+
+if plt.ylim()[1] > 1e3:
+    plt.ylim(0.7 * data_hc_mean.min().item(), 1.3e0)
 
 os.makedirs("plots/propagator/", exist_ok=True)
 
