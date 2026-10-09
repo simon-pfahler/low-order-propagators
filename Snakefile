@@ -258,7 +258,7 @@ rule propagator_timesliced_errors:
     output:
         "plots/propagator/propagator_timesliced_error_{layers}layers_m{mass}.pdf",
     shell:
-        "python scripts/figure_propagator_error.py --layers={wildcards.layers} --mass={wildcards.mass}"
+        "python scripts/figure_propagator_error_timeslice.py --layers={wildcards.layers} --mass={wildcards.mass}"
 # <<< Rules to create figures
 
 rule train:
