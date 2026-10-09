@@ -54,6 +54,11 @@ for idx, test_w in enumerate(test_ws):
 
     for spin_idx in range(4):
         for color_idx in range(3):
+            output_path = f"data/propagators/exact_propagator_{action}_{lattice_size_str}_U{idx}_s{spin_idx}_c{color_idx}_m{mass:.2f}.pt"
+
+            if os.path.exists(output_path):
+                continue
+
             source = torch.zeros(*lattice_size, 4, 3, dtype=torch.cdouble)
             source[0, 0, 0, 0, spin_idx, color_idx] = 1
 
@@ -70,5 +75,4 @@ for idx, test_w in enumerate(test_ws):
                 inner_iter=400,
             )[0]
 
-            output_path = f"data/propagators/exact_propagator_{action}_{lattice_size_str}_U{idx}_s{spin_idx}_c{color_idx}_m{mass:.2f}.pt"
             torch.save(res, output_path)
