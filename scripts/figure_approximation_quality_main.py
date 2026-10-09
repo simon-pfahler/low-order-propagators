@@ -40,9 +40,9 @@ for idx in range(2):
     means_restricted = []
     stds_restricted = []
     masses_restricted = []
-    means_GMRES = []
-    stds_GMRES = []
-    masses_GMRES = []
+    means_PolyH = []
+    stds_PolyH = []
+    masses_PolyH = []
 
     # Find all masses
     masses = sorted(set(extract_mass(f) for f in os.listdir("data/Qs")))
@@ -59,13 +59,13 @@ for idx in range(2):
             means_hopping.append(torch.mean(data))
             stds_hopping.append(torch.std(data))
 
-        # GMRES
-        gmres_path = f"data/Qs/Qs_{layers}layers_GMRES_{action}_{lattice_size_str}_m{mass:.2f}.pt"
-        if os.path.exists(gmres_path):
-            data = torch.load(gmres_path, weights_only=True)
-            masses_GMRES.append(mass)
-            means_GMRES.append(torch.mean(data))
-            stds_GMRES.append(torch.std(data))
+        # PolyH
+        polyh_path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_PolyH_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+        if os.path.exists(polyh_path):
+            data = torch.load(polyh_path, weights_only=True)
+            masses_PolyH.append(mass)
+            means_PolyH.append(torch.mean(data))
+            stds_PolyH.append(torch.std(data))
 
         # HC model
         hc_path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_HC_{action}_{lattice_size_str}_m{mass:.2f}.pt"
@@ -96,15 +96,15 @@ for idx in range(2):
         label="Hopping expansion",
     )
     ax[idx].errorbar(
-        masses_GMRES,
-        means_GMRES,
-        yerr=stds_GMRES,
+        masses_PolyH,
+        means_PolyH,
+        yerr=stds_PolyH,
         linestyle="none",
         color="#ee3377",
         capsize=5,
         marker="^",
         markerfacecolor="none",
-        label="GMRES",
+        label="PolyH",
     )
     ax[idx].errorbar(
         masses_restricted,
@@ -141,8 +141,8 @@ for idx in range(2):
     ax[idx].grid(True, which="both", linestyle="--", alpha=0.5)
 
     ax[idx].set_ylim(
-        min(means_HC + means_restricted + means_hopping + means_GMRES) / 1.3,
-        1.3 * max(means_HC + means_restricted + means_GMRES),
+        min(means_HC + means_restricted + means_hopping + means_PolyH) / 1.3,
+        1.3 * max(means_HC + means_restricted + means_PolyH),
     )
 
 os.makedirs("plots/Qs/", exist_ok=True)

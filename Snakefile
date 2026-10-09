@@ -38,7 +38,7 @@ rule Qs_main:
         expand(
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,4],
-            type=["hopping", "GMRES"],
+            type=["hopping", "PolyH"],
             mass=MASSES,
         ),
         expand(
@@ -57,12 +57,12 @@ rule Qs_vs_layers:
         expand(
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m1.40.pt",
             layers=[1,2,3,4,6],
-            type=["hopping", "GMRES"],
+            type=["hopping", "PolyH"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m-3.00.pt",
             layers=[1,2,3,4,6,8,12,16],
-            type=["hopping", "GMRES"],
+            type=["hopping", "PolyH"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m1.40.pt",
@@ -121,7 +121,7 @@ rule Qs_action_dependence:
     input:
         expand(
             "data/Qs/Qs_4layers_{type}_{action}_8c16_m{mass}.pt",
-            type=["hopping", "GMRES"],
+            type=["hopping", "PolyH"],
             action=["WilsonQuenched", "WilsonDynamic", "Haar"],
             mass=MASSES,
         ),
@@ -141,7 +141,7 @@ rule Qs_volume_dependence:
     input:
         expand(
             "data/Qs/Qs_4layers_{type}_WilsonQuenched_{vol}_m{mass}.pt",
-            type=["hopping", "GMRES"],
+            type=["hopping", "PolyH"],
             vol=["8c16", "16c32"],
             mass=MASSES,
         ),
@@ -175,13 +175,13 @@ rule convergence_rate:
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,2,3,4,6,8,12,16],
             mass=SMALL_MASSES,
-            type=["hopping", "GMRES"],
+            type=["hopping", "PolyH"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,2,3,4,6],
             mass=LARGE_MASSES,
-            type=["hopping", "GMRES"],
+            type=["hopping", "PolyH"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
@@ -263,7 +263,7 @@ rule get_Qs_baseline:
     output:
         "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt"
     wildcard_constraints:
-        type="hopping|GMRES",
+        type="hopping|PolyH",
     shell:
         "python scripts/get_approximation_quality.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 

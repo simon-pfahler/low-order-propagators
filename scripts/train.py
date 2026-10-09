@@ -31,7 +31,7 @@ layers = int(args["--layers"])
 model_type = args["--model_type"]
 action = args["--action"]
 lattice_size_str = args["--lattice_size"]
-if model_type not in ["restricted", "HL", "HC"]:
+if model_type not in ["restricted", "HL", "HC", "PolyH"]:
     raise ValueError(f"Model type '{model_type}' not supported!")
 mass = float(args["--mass"])
 training_steps = int(args["--training-steps"])
@@ -85,6 +85,11 @@ match model_type:
                     model.weights[wi].data[2 * mu + 1, :, mu + 1] += kappa
                     model.weights[wi].data[2 * mu + 2, :, 0] += kappa
                     model.weights[wi].data[2 * mu + 2, :, mu + 1] += -kappa
+    case "PolyH":
+        model = PolyH(layers, model_paths)
+        for p in model.parameters():
+            p.data *= 1e-4
+        model.weights.data[0] += 1
     case _:
         model = Model_HL(layers, model_paths)
         for p in model.parameters():

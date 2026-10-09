@@ -34,7 +34,7 @@ action = args["--action"]
 lattice_size_str = args["--lattice_size"]
 model_action = args["--model_action"]
 model_lattice_size_str = args["--model_lattice_size"]
-if model_type not in ["restricted", "HL", "HC", "hopping", "GMRES"]:
+if model_type not in ["restricted", "HL", "HC", "hopping", "GMRES", "PolyH"]:
     raise ValueError(f"Type '{model_type}' not supported!")
 mass = float(args["--mass"])
 
@@ -83,6 +83,11 @@ match model_type:
         func = lambda x, w: qcd_ml.util.solver.GMRES(
             w, x.clone(), torch.zeros_like(x), eps=1e-16, maxiter=layers
         )[0]
+    case "PolyH":
+        model = PolyH(layers, model_paths)
+        weights_path = f"data/weights/weights_{model_name}_m{mass:.2f}.pt"
+        model.load_state_dict(torch.load(weights_path, weights_only=True))
+        func = lambda x, w: model(x, w.U)
     case "hopping":
 
         def hopping(v, w):

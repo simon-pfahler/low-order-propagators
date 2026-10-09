@@ -1,6 +1,7 @@
 import torch
 from qcd_ml.base.paths import PathBuffer
 from qcd_ml.nn.pt import v_PT
+from qcd_ml.qcd.dirac import dirac_wilson
 from utility import generators
 
 
@@ -154,3 +155,38 @@ class Model_restricted(torch.nn.Module):
             v = v + curr_terms
 
         return self.overall_factor * v
+
+
+class PolyH(torch.nn.Module):
+    def __init__(self, nlayers, paths):
+        super().__init__()
+        self.paths = paths
+        self.nlayers = nlayers
+        self.npaths = len(self.paths)
+
+        self.weights = torch.nn.Parameter(
+            torch.randn(self.nlayers + 1, dtype=torch.cdouble)
+        )
+
+    def forward(self, v, U):
+        pt = [PathBuffer(U, pi) for pi in self.paths]
+
+        transported_v = torch.clone(v)
+        v = v * self.weights[0]
+        for i in range(self.nlayers):
+            v_pts = [pti.v_transport(transported_v) for pti in pt]
+
+            curr_terms = torch.zeros_like(v)
+            for mu in range(4):
+                w_plus = generators[0] + generators[mu + 1]
+                w_minus = generators[0] - generators[mu + 1]
+                curr_terms += torch.einsum(
+                    "ij,...jc->...ic", w_plus, v_pts[2 * mu + 1]
+                )
+                curr_terms += torch.einsum(
+                    "ij,...jc->...ic", w_minus, v_pts[2 * mu + 2]
+                )
+            transported_v = curr_terms
+            v = v + self.weights[i + 1] * curr_terms
+
+        return v

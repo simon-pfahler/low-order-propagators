@@ -42,9 +42,9 @@ for train in range(3):
         means_restricted = []
         stds_restricted = []
         masses_restricted = []
-        means_GMRES = []
-        stds_GMRES = []
-        masses_GMRES = []
+        means_PolyH = []
+        stds_PolyH = []
+        masses_PolyH = []
 
         # Find all masses
         masses = sorted(set(extract_mass(f) for f in os.listdir("data/Qs")))
@@ -61,13 +61,13 @@ for train in range(3):
                 means_hopping.append(torch.mean(data))
                 stds_hopping.append(torch.std(data))
 
-            # GMRES
-            gmres_path = f"data/Qs/Qs_{layers}layers_GMRES_{action}_{lattice_size_str}_m{mass:.2f}.pt"
-            if os.path.exists(gmres_path):
-                data = torch.load(gmres_path, weights_only=True)
-                masses_GMRES.append(mass)
-                means_GMRES.append(torch.mean(data))
-                stds_GMRES.append(torch.std(data))
+            # PolyH
+            polyh_path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_PolyH_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+            if os.path.exists(polyh_path):
+                data = torch.load(polyh_path, weights_only=True)
+                masses_PolyH.append(mass)
+                means_PolyH.append(torch.mean(data))
+                stds_PolyH.append(torch.std(data))
 
             # HC model
             hc_path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_HC_{action}_{lattice_size_str}_m{mass:.2f}.pt"
@@ -100,16 +100,16 @@ for train in range(3):
             label="Hopping expansion",
         )
         ax[test][train].errorbar(
-            masses_GMRES,
-            means_GMRES,
-            yerr=stds_GMRES,
+            masses_PolyH,
+            means_PolyH,
+            yerr=stds_PolyH,
             linestyle="none",
             color="#ee3377",
             capsize=4,
             marker="^",
             markersize=4,
             markerfacecolor="none",
-            label="GMRES",
+            label="PolyH",
         )
         ax[test][train].errorbar(
             masses_restricted,

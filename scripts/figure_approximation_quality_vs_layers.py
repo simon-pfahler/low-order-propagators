@@ -40,9 +40,9 @@ for idx in range(2):
     means_restricted = []
     stds_restricted = []
     layerss_restricted = []
-    means_GMRES = []
-    stds_GMRES = []
-    layerss_GMRES = []
+    means_PolyH = []
+    stds_PolyH = []
+    layerss_PolyH = []
 
     layerss = [1, 2, 3, 4, 6]
     if idx == 1:
@@ -59,13 +59,13 @@ for idx in range(2):
             means_hopping.append(torch.mean(data))
             stds_hopping.append(torch.std(data))
 
-        # GMRES
-        gmres_path = f"data/Qs/Qs_{layers}layers_GMRES_{action}_{lattice_size_str}_m{mass:.2f}.pt"
-        if os.path.exists(gmres_path):
-            data = torch.load(gmres_path, weights_only=True)
-            layerss_GMRES.append(layers)
-            means_GMRES.append(torch.mean(data))
-            stds_GMRES.append(torch.std(data))
+        # PolyH
+        polyh_path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_PolyH_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+        if os.path.exists(polyh_path):
+            data = torch.load(polyh_path, weights_only=True)
+            layerss_PolyH.append(layers)
+            means_PolyH.append(torch.mean(data))
+            stds_PolyH.append(torch.std(data))
 
         # HC model
         hc_path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_HC_{action}_{lattice_size_str}_m{mass:.2f}.pt"
@@ -96,15 +96,15 @@ for idx in range(2):
         label="Hopping expansion",
     )
     ax[idx].errorbar(
-        layerss_GMRES,
-        means_GMRES,
-        yerr=stds_GMRES,
+        layerss_PolyH,
+        means_PolyH,
+        yerr=stds_PolyH,
         linestyle="none",
         color="#ee3377",
         capsize=5,
         marker="^",
         markerfacecolor="none",
-        label="GMRES",
+        label="PolyH",
     )
     ax[idx].errorbar(
         layerss_restricted,
