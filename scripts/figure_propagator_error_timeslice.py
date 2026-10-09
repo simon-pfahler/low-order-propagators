@@ -103,6 +103,8 @@ plt.title(
     "Relative propagator error vs time separation\n"
     f"for {layers} layers, m={mass:.2f}"
 )
+plt.xticks([0, 4, 8, 12, 16])
+plt.yscale("log")
 
 os.makedirs("plots/propagator/", exist_ok=True)
 

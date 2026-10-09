@@ -124,8 +124,9 @@ plt.errorbar(
 
 plt.legend()
 plt.xlabel("Mass")
-plt.ylabel("Propagator error")
-plt.title(f"Propagator error vs mass for {layers} layers")
+plt.ylabel("Relative propagator error")
+plt.title(f"Relative propagator error vs mass for {layers} layers")
+plt.yscale("log")
 
 os.makedirs("plots/propagator/", exist_ok=True)
 
