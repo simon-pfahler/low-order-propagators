@@ -358,7 +358,7 @@ rule get_exact_propagator:
             color_idx=range(3),
         )
     shell:
-        "python get_exact_propagator.py --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
+        "python scripts/get_exact_propagator.py --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
 rule get_propagator_error_model:
     threads: 8

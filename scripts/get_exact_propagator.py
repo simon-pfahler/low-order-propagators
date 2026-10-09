@@ -68,7 +68,6 @@ for idx, test_w in enumerate(test_ws):
                 eps=1e-12,
                 maxiter=10000,
                 inner_iter=400,
-                verbose=True,
             )[0]
 
             output_path = f"data/propagators/exact_propagator_{action}_{lattice_size_str}_U{idx}_s{spin_idx}_c{color_idx}_m{mass:.2f}.pt"
