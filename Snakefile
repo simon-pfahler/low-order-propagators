@@ -203,14 +203,9 @@ rule convergence_rate:
 rule coefficients_vs_layers:
     input:
         expand(
-            "data/coefficients/seeded_coefficients_{layers}layers_WilsonQuenched_8c16_restricted_m{mass}_seed{seed}.pt",
+            "data/coefficients/seeded_coefficients_{layers}layers_WilsonQuenched_8c16_{type}_m{mass}_seed{seed}.pt",
             layers=[1,2,3,4,6,8,12,16],
-            mass=SEEDED_MASSES,
-            seed=range(5),
-        ),
-        expand(
-            "data/coefficients/seeded_coefficients_{layers}layers_WilsonQuenched_8c16_HC_m{mass}_seed{seed}.pt",
-            layers=[1,2,3,4,6,8,12,16],
+            type=["HC", "restricted"],
             mass=SEEDED_MASSES,
             seed=range(5),
         ),
