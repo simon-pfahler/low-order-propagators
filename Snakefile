@@ -32,6 +32,9 @@ rule all:
         "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 1)]_g1.pdf",
         "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 1), (1, 1), (0, -1)]_g0.pdf",
         "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 3)]_g0.pdf",
+        "plots/propagator/propagator_error_1layers.pdf",
+        "plots/propagator/propagator_error_4layers.pdf",
+        "plots/propagator/propagator_timesliced_error_4layers_m-1.00.pdf",
 
 rule Qs_main:
     input:
@@ -217,6 +220,45 @@ rule coefficients_vs_layers:
         "plots/coefficients/coefficients_vs_layers_appendix_path{path}_g{gamma_index}.pdf",
     shell:
         "python scripts/figure_coefficient_vs_layers_appendix.py --path='{wildcards.path}' --gamma_index={wildcards.gamma_index}"
+
+rule propagator_errors:
+    input:
+        expand(
+            "data/propagators/exact_propagator_WilsonQuenched_8c16_U{idx}_s{spin_idx}_c{color_idx}_m{mass}.pt",
+            idx=range(4),
+            spin_idx=range(4),
+            color_idx=range(3),
+            mass=[f"{m:.2f}" for m in range(-5,3)],
+        ),
+        expand(
+            "data/propagators/timesliced_errors_{{layers}}layers_hopping_WilsonQuenched_8c16_m{mass}.pt",
+            mass=[f"{m:.2f}" for m in range(-5,3)],
+        ),
+        expand(
+            "data/propagators/timesliced_errors_{{layers}}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_8c16_m{mass}.pt",
+            type=["HC", "restricted"],
+            mass=[f"{m:.2f}" for m in range(-5,3)],
+        ),
+    output:
+        "plots/propagator/propagator_error_{layers}layers.pdf",
+    shell:
+        "python scripts/figure_propagator_error.py --layers={wildcards.layers}"
+
+rule propagator_timesliced_errors:
+    input:
+        expand(
+            "data/propagators/exact_propagator_WilsonQuenched_8c16_U{idx}_s{spin_idx}_c{color_idx}_m{{mass}}.pt",
+            idx=range(4),
+            spin_idx=range(4),
+            color_idx=range(3),
+        ),
+        "data/propagators/timesliced_errors_{layers}layers_hopping_WilsonQuenched_8c16_m{mass}.pt",
+        "data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_HC_WilsonQuenched_8c16_m{mass}.pt",
+        "data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_restricted_WilsonQuenched_8c16_m{mass}.pt",
+    output:
+        "plots/propagator/propagator_timesliced_error_{layers}layers_m{mass}.pdf",
+    shell:
+        "python scripts/figure_propagator_error.py --layers={wildcards.layers} --mass={wildcards.mass}"
 # <<< Rules to create figures
 
 rule train:
@@ -303,3 +345,54 @@ rule get_coefficients_hopping:
         type="hopping",
     shell:
         "python scripts/get_coefficients.py --layers={wildcards.layers} --type={wildcards.type} --mass={wildcards.mass}"
+
+rule get_exact_propagator:
+    threads: 8
+    resources:
+        cores = 8
+    output:
+        expand(
+            "data/propagators/exact_propagator_{{action}}_{{lattice_size}}_U{idx}_s{spin_idx}_c{color_idx}_m{{mass}}.pt",
+            idx=range(4),
+            spin_idx=range(4),
+            color_idx=range(3),
+        )
+    shell:
+        "python get_exact_propagator.py --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
+
+rule get_propagator_error_model:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        expand(
+            "data/propagators/exact_propagator_{{action}}_{{lattice_size}}_U{idx}_s{spin_idx}_c{color_idx}_m{{mass}}.pt",
+            idx=range(4),
+            spin_idx=range(4),
+            color_idx=range(3),
+        ),
+        "data/weights/weights_{layers}layers_{model_action}_{model_lattice_size}_{type}_m{mass}.pt"
+    output:
+        "data/propagators/timesliced_errors_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
+    wildcard_constraints:
+        type="HC|HL|restricted",
+    shell:
+        "python scripts/get_propagator_error.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size} --mass={wildcards.mass}"
+
+rule get_propagator_error_baseline:
+    threads: 8
+    resources:
+        cores = 8
+    input:
+        expand(
+            "data/propagators/exact_propagator_{{action}}_{{lattice_size}}_U{idx}_s{spin_idx}_c{color_idx}_m{{mass}}.pt",
+            idx=range(4),
+            spin_idx=range(4),
+            color_idx=range(3),
+        ),
+    output:
+        "data/propagators/timesliced_errors_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt"
+    wildcard_constraints:
+        type="hopping|GMRES",
+    shell:
+        "python scripts/get_propagator_error.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
