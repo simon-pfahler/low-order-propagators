@@ -38,13 +38,13 @@ rule Qs_main:
         expand(
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,4],
-            type=["hopping", "PolyH"],
+            type=["hopping"],
             mass=MASSES,
         ),
         expand(
             "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,4],
-            type=["HC", "restricted"],
+            type=["HC", "restricted", "PolyH"],
             mass=MASSES,
         ),
     output:
@@ -57,22 +57,22 @@ rule Qs_vs_layers:
         expand(
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m1.40.pt",
             layers=[1,2,3,4,6],
-            type=["hopping", "PolyH"],
+            type=["hopping"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m-3.00.pt",
             layers=[1,2,3,4,6,8,12,16],
-            type=["hopping", "PolyH"],
+            type=["hopping"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m1.40.pt",
             layers=[1,2,3,4,6],
-            type=["HC", "restricted"],
+            type=["HC", "restricted", "PolyH"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m-3.00.pt",
             layers=[1,2,3,4,6,8,12,16],
-            type=["HC", "restricted"],
+            type=["HC", "restricted", "PolyH"],
         ),
     output:
         "plots/Qs/Qs_vs_layers.pdf",
@@ -121,14 +121,14 @@ rule Qs_action_dependence:
     input:
         expand(
             "data/Qs/Qs_4layers_{type}_{action}_8c16_m{mass}.pt",
-            type=["hopping", "PolyH"],
+            type=["hopping"],
             action=["WilsonQuenched", "WilsonDynamic", "Haar"],
             mass=MASSES,
         ),
         expand(
             "data/Qs/Qs_4layers_{model_action}_8c16_{type}_{action}_8c16_m{mass}.pt",
             model_action=["WilsonQuenched", "WilsonDynamic", "Haar"],
-            type=["HC", "restricted"],
+            type=["HC", "restricted", "PolyH"],
             action=["WilsonQuenched", "WilsonDynamic", "Haar"],
             mass=MASSES,
         ),
@@ -141,13 +141,13 @@ rule Qs_volume_dependence:
     input:
         expand(
             "data/Qs/Qs_4layers_{type}_WilsonQuenched_{vol}_m{mass}.pt",
-            type=["hopping", "PolyH"],
+            type=["hopping"],
             vol=["8c16", "16c32"],
             mass=MASSES,
         ),
         expand(
             "data/Qs/Qs_4layers_WilsonQuenched_8c16_{type}_WilsonQuenched_{vol}_m{mass}.pt",
-            type=["HC", "restricted"],
+            type=["HC", "restricted", "PolyH"],
             vol=["8c16", "16c32"],
             mass=MASSES,
         ),
@@ -175,25 +175,25 @@ rule convergence_rate:
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,2,3,4,6,8,12,16],
             mass=SMALL_MASSES,
-            type=["hopping", "PolyH"],
+            type=["hopping"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,2,3,4,6],
             mass=LARGE_MASSES,
-            type=["hopping", "PolyH"],
+            type=["hopping"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,2,3,4,6,8,12,16],
             mass=SMALL_MASSES,
-            type=["HC", "restricted"],
+            type=["HC", "restricted", "PolyH"],
         ),
         expand(
             "data/Qs/Qs_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_16c32_m{mass}.pt",
             layers=[1,2,3,4,6],
             mass=LARGE_MASSES,
-            type=["HC", "restricted"],
+            type=["HC", "restricted", "PolyH"],
         ),
     output:
         "plots/convergence/convergence_rate.pdf",
@@ -227,7 +227,7 @@ rule train:
         "data/weights/weights_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.pt",
         "data/histories/history_{layers}layers_{action}_{lattice_size}_{model_type}_m{mass}.txt",
     wildcard_constraints:
-        model_type="HC|HL|restricted",
+        model_type="HC|HL|restricted|PolyH",
     shell:
         "python scripts/train.py --layers={wildcards.layers} --model_type={wildcards.model_type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
@@ -252,7 +252,7 @@ rule get_Qs_model:
     output:
         "data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size}_{type}_{action}_{lattice_size}_m{mass}.pt",
     wildcard_constraints:
-        type="HC|HL|restricted",
+        type="HC|HL|restricted|PolyH",
     shell:
         "python scripts/get_approximation_quality.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --model_action={wildcards.model_action} --model_lattice_size={wildcards.model_lattice_size} --mass={wildcards.mass}"
 
@@ -263,7 +263,7 @@ rule get_Qs_baseline:
     output:
         "data/Qs/Qs_{layers}layers_{type}_{action}_{lattice_size}_m{mass}.pt"
     wildcard_constraints:
-        type="hopping|PolyH",
+        type="hopping|GMRES",
     shell:
         "python scripts/get_approximation_quality.py --layers={wildcards.layers} --type={wildcards.type} --action={wildcards.action} --lattice_size={wildcards.lattice_size} --mass={wildcards.mass}"
 
