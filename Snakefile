@@ -32,13 +32,9 @@ rule all:
         "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 1)]_g1.pdf",
         "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 1), (1, 1), (0, -1)]_g0.pdf",
         "plots/coefficients/coefficients_vs_layers_appendix_path[(0, 3)]_g0.pdf",
-        expand(
-            "plots/propagator/propagator_error_{layers}layers.pdf",
-            layers=[1,2,3,4,6,8,12,16],
-        ),
-        "plots/propagator/propagator_timesliced_error_4layers_m-1.00.pdf",
-        "plots/propagator/propagator_timesliced_error_16layers_m-1.00.pdf",
-        "plots/propagator/propagator_timesliced_error_16layers_m-3.00.pdf",
+        "plots/propagator/propagator_error.pdf",
+        "plots/propagator/propagator_timesliced_error_m1.00.pdf",
+        "plots/propagator/propagator_timesliced_error_m-3.00.pdf",
 
 rule Qs_main:
     input:
@@ -235,19 +231,21 @@ rule propagator_errors:
             mass=[f"{m:.2f}" for m in range(-5,3)],
         ),
         expand(
-            "data/propagators/timesliced_errors_{{layers}}layers_{type}_WilsonQuenched_8c16_m{mass}.pt",
+            "data/propagators/timesliced_errors_{layers}layers_{type}_WilsonQuenched_8c16_m{mass}.pt",
             mass=[f"{m:.2f}" for m in range(-5,3)],
+            layers=[1,4],
             type=["hopping", "GMRES"],
         ),
         expand(
-            "data/propagators/timesliced_errors_{{layers}}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_8c16_m{mass}.pt",
+            "data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_8c16_m{mass}.pt",
             type=["HC", "restricted"],
+            layers=[1,4],
             mass=[f"{m:.2f}" for m in range(-5,3)],
         ),
     output:
-        "plots/propagator/propagator_error_{layers}layers.pdf",
+        "plots/propagator/propagator_error.pdf",
     shell:
-        "python scripts/figure_propagator_error.py --layers={wildcards.layers}"
+        "python scripts/figure_propagator_error.py"
 
 rule propagator_timesliced_errors:
     input:
@@ -257,14 +255,20 @@ rule propagator_timesliced_errors:
             spin_idx=range(4),
             color_idx=range(3),
         ),
-        "data/propagators/timesliced_errors_{layers}layers_GMRES_WilsonQuenched_8c16_m{mass}.pt",
-        "data/propagators/timesliced_errors_{layers}layers_hopping_WilsonQuenched_8c16_m{mass}.pt",
-        "data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_HC_WilsonQuenched_8c16_m{mass}.pt",
-        "data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_restricted_WilsonQuenched_8c16_m{mass}.pt",
+        expand(
+            "data/propagators/timesliced_errors_{layers}layers_{type}_WilsonQuenched_8c16_m{{mass}}.pt",
+            layers=[1,4,16],
+            type=["GMRES", "hopping"],
+        ),
+        expand(
+            "data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_HC_WilsonQuenched_8c16_m{{mass}}.pt",
+            layers=[1,4,16],
+            type=["HC", "restricted"],
+        ),
     output:
         "plots/propagator/propagator_timesliced_error_{layers}layers_m{mass}.pdf",
     shell:
-        "python scripts/figure_propagator_error_timeslice.py --layers={wildcards.layers} --mass={wildcards.mass}"
+        "python scripts/figure_propagator_error_timeslice.py --mass={wildcards.mass}"
 # <<< Rules to create figures
 
 rule train:
