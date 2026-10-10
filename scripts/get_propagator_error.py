@@ -64,7 +64,7 @@ if model_type == "hopping" and mass == -4:
     )
     os.makedirs("data/propagators", exist_ok=True)
     outpath = f"data/propagators/timesliced_errors_{model_name}_{action}_{lattice_size_str}_m{mass:.2f}.pt"
-    torch.save(Qs, outpath)
+    torch.save(timesliced_errors, outpath)
     quit()
 
 # Define model
