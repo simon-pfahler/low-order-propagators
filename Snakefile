@@ -266,7 +266,7 @@ rule propagator_timesliced_errors:
             type=["HC", "restricted"],
         ),
     output:
-        "plots/propagator/propagator_timesliced_error_{layers}layers_m{mass}.pdf",
+        "plots/propagator/propagator_timesliced_error_m{mass}.pdf",
     shell:
         "python scripts/figure_propagator_error_timeslice.py --mass={wildcards.mass}"
 # <<< Rules to create figures
