@@ -9,7 +9,7 @@ import torch
 plt.style.use("scripts/iclr2027.mplstyle")
 
 # Parse docopt arguments
-layerss = [1, 4]
+layerss = [1, 4, 16]
 action = "WilsonQuenched"
 lattice_size_str = "8c16"
 model_action = "WilsonQuenched"
@@ -17,8 +17,8 @@ model_lattice_size_str = "8c16"
 
 masses = [-5, -4, -3, -2, -1, 0, 1, 2]
 
-fig, ax = plt.subplots(1, 2, figsize=(9, 2.3))
-plt.subplots_adjust(wspace=0.15, hspace=0.12)
+fig, ax = plt.subplots(1, 3, figsize=(9, 2.3))
+plt.subplots_adjust(wspace=0.2, hspace=0.12, top=0.68)
 
 for ax_idx, layers in enumerate(layerss):
     data_GMRES_mean = torch.nan * torch.zeros(len(masses))
@@ -149,18 +149,29 @@ for ax_idx, layers in enumerate(layerss):
         label="HC model",
     )
 
-    ax[ax_idx].legend()
     ax[ax_idx].set_xlabel("Mass")
     if ax_idx == 0:
         ax[ax_idx].set_ylabel("Relative propagator error")
-        ax[ax_idx].set_title(
-            f"Relative propagator error vs mass for {layers} layer"
-        )
+        ax[ax_idx].set_title(f"{layers} layer")
     else:
-        ax[ax_idx].set_title(
-            f"Relative propagator error vs mass for {layers} layers"
-        )
+        ax[ax_idx].set_title(f"{layers} layers")
     ax[ax_idx].set_yscale("log")
+
+handles, labels = [], []
+for axis in ax:
+    axis_handles, axis_labels = axis.get_legend_handles_labels()
+    if axis_labels:
+        handles, labels = axis_handles, axis_labels
+        break
+fig.legend(
+    handles,
+    labels,
+    loc="upper center",
+    bbox_to_anchor=(0.5, 0.91),
+    ncol=4,
+    frameon=False,
+)
+fig.suptitle("Relative propagator error vs mass", y=0.98)
 
 os.makedirs("plots/propagator/", exist_ok=True)
 

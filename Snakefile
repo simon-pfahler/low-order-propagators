@@ -233,13 +233,13 @@ rule propagator_errors:
         expand(
             "data/propagators/timesliced_errors_{layers}layers_{type}_WilsonQuenched_8c16_m{mass}.pt",
             mass=[f"{m:.2f}" for m in range(-5,3)],
-            layers=[1,4],
+            layers=[1,4,16],
             type=["hopping", "GMRES"],
         ),
         expand(
             "data/propagators/timesliced_errors_{layers}layers_WilsonQuenched_8c16_{type}_WilsonQuenched_8c16_m{mass}.pt",
             type=["HC", "restricted"],
-            layers=[1,4],
+            layers=[1,4,16],
             mass=[f"{m:.2f}" for m in range(-5,3)],
         ),
     output:
