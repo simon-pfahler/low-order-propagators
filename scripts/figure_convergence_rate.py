@@ -65,9 +65,9 @@ factors_HC_err = []
 masses_restricted = []
 factors_restricted = []
 factors_restricted_err = []
-masses_GMRES = []
-factors_GMRES = []
-factors_GMRES_err = []
+masses_PolyH = []
+factors_PolyH = []
+factors_PolyH_err = []
 
 # Find all masses
 masses = sorted(set(extract_mass(f) for f in os.listdir("data/Qs")))
@@ -100,22 +100,22 @@ for mass in masses:
         factors_hopping.append(b)
         factors_hopping_err.append(b_err)
 
-    # GMRES
-    gmres_points = []
+    # PolyH
+    polyh_points = []
     for layers in layerss:
-        path = f"data/Qs/Qs_{layers}layers_GMRES_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+        path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_PolyH_{action}_{lattice_size_str}_m{mass:.2f}.pt"
         if os.path.exists(path):
             data = torch.load(path, weights_only=True)
             mean = float(torch.mean(data))
             sem = float(torch.std(data) / np.sqrt(data.numel()))
-            gmres_points.append((layers, mean, sem))
+            polyh_points.append((layers, mean, sem))
 
-    if len(gmres_points) >= 2:
-        ns, ms, ss = zip(*gmres_points)
+    if len(polyh_points) >= 2:
+        ns, ms, ss = zip(*polyh_points)
         b, b_err = fit_convergence_factor(ns, ms, ss)
-        masses_GMRES.append(mass)
-        factors_GMRES.append(b)
-        factors_GMRES_err.append(b_err)
+        masses_PolyH.append(mass)
+        factors_PolyH.append(b)
+        factors_PolyH_err.append(b_err)
 
     # HC model
     hc_points = []
@@ -167,15 +167,15 @@ plt.errorbar(
     label="Hopping expansion",
 )
 plt.errorbar(
-    masses_GMRES,
-    factors_GMRES,
-    yerr=factors_GMRES_err,
+    masses_PolyH,
+    factors_PolyH,
+    yerr=factors_PolyH_err,
     linestyle="none",
     color="#ee3377",
     marker="^",
     markerfacecolor="none",
     capsize=3,
-    label="GMRES",
+    label="PolyH",
 )
 plt.errorbar(
     masses_restricted,
