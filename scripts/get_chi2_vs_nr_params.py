@@ -101,28 +101,6 @@ def print_status(best_paramss, best_chi2s):
         print(f"{line:<{width}} -> {chi2},\tBIC {bic:.1f}{marker}")
 
 
-
-def distribute_proposals(improvements, nr_proposals):
-    """Distribute nr_proposals over the bins, proportional to how much their
-    best chi2/DOF improved in the last step, with a minimum of 2 per bin and
-    largest-remainder rounding."""
-    nr_bins = len(improvements)
-    allocations = [2] * nr_bins
-    remaining = nr_proposals - 2 * nr_bins
-    if remaining > 0:
-        if sum(improvements) > 0:
-            quotas = [remaining * e / sum(improvements) for e in improvements]
-            allocations = [a + int(q) for a, q in zip(allocations, quotas)]
-            leftover = remaining - sum(int(q) for q in quotas)
-            order = sorted(range(nr_bins), key=lambda i: quotas[i] % 1, reverse=True)
-            for i in order[:leftover]:
-                allocations[i] += 1
-        else:
-            # No bin improved in the last step: distribute uniformly
-            for i in range(remaining):
-                allocations[i % nr_bins] += 1
-    return allocations
-
 def mutate(params):
     h = rng.uniform()
     powers_num, powers_denom = list(params[0]), list(params[1])
@@ -194,23 +172,11 @@ def mutate(params):
 best_paramss = [(list(range(i + 1)), []) for i in range(max_nr_params)]
 best_chi2s = [get_chi2(e[0], e[1]) for e in best_paramss]
 
-prev_best_chi2s = None
 for step in range(100):
     print(f"Step {step}")
     print_status(best_paramss, best_chi2s)
-    # Distribute 100 new proposals over the bins, proportional to how much
-    # their best chi2/DOF improved in the last step (2 per bin minimum)
-    if prev_best_chi2s is None:
-        improvements = [1.0] * max_nr_params
-    else:
-        improvements = [
-            max(prev - curr, 0.0)
-            for prev, curr in zip(prev_best_chi2s, best_chi2s)
-        ]
-    nr_proposalss = distribute_proposals(improvements, 100)
-    print(f"Proposals per bin: {nr_proposalss}")
-    for i, params in enumerate(best_paramss):
-        for _ in range(nr_proposalss[i]):
+    for params in best_paramss:
+        for _ in range(5):
             # Mutate once in 50% of cases, twice in 50% of the
             # remaining cases, three times in 50% of those, etc.
             new_params = mutate(params)
@@ -221,7 +187,6 @@ for step in range(100):
             if chi2 < best_chi2s[nr_params - 1]:
                 best_chi2s[nr_params - 1] = chi2
                 best_paramss[nr_params - 1] = new_params
-    prev_best_chi2s = list(best_chi2s)
     with open(
         f"data/chi2/chi2s_{layers}layers_path{path}_g{gamma_index}.json", "w"
     ) as f:
