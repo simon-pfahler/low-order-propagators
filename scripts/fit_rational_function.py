@@ -74,7 +74,7 @@ if path != canonicalize_path(path)[0]:
     )
 gamma_index = int(args["--gamma_index"])
 powers_num = [int(e) for e in args["--powers_num"].split(",")]
-powers_denom = [int(e) for e in args["--powers_denom"].split(",")]
+powers_denom = [int(e) for e in args["--powers_denom"].split(",") if e != ""]
 
 masses = torch.from_numpy(np.arange(-5, 2.2, 0.2))
 for idx, mass in enumerate(masses):
@@ -149,7 +149,7 @@ def linearized_fit(params, masses, coefs):
         res += params[idx] * (masses + 4) ** n
         idx += 1
     for m in powers_denom:
-        res += params[idx] * (masses + 4) ** m * coefs
+        res -= params[idx] * (masses + 4) ** m * coefs
         idx += 1
     return res
 
@@ -199,7 +199,7 @@ while not best_converged:
             masses, coef_means, coef_stds, rational_function
         )
 
-        optimizer = Minuit(least_squares, *fit_params)
+        optimizer = Minuit(least_squares, *map(float, fit_params))
         optimizer.migrad(use_simplex=True, iterate=20)
 
         chisq = optimizer.fmin.reduced_chi2
@@ -229,6 +229,11 @@ print(
 print(
     f"Denominator: {", ".join([format_pdg(p,e)[0] for p, e in zip(best_fit_params[len(powers_num):], best_fit_param_errors[len(powers_num):])])}"
 )
+extrap_error = (
+    abs(rational_function(val_mass, *best_fit_params) - coef_val_mean)
+    / coef_val_std
+)
+print(f"Extrapolation error at mass {val_mass}:\n{extrap_error}")
 print(f"Chisq/DOF:\n{best_chisq}")
 
 if not args["--plot"]:

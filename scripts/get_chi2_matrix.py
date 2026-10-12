@@ -11,6 +11,7 @@ Options:
     --m_max=<n>         Maximal power of (mass+4) in the denominator
 """
 
+import os
 import subprocess
 
 import matplotlib.pyplot as plt
@@ -25,39 +26,53 @@ gamma_index = int(args["--gamma_index"])
 n_max = int(args["--n_max"])
 m_max = int(args["--m_max"])
 
-chi2_matrix = np.zeros((m_max, n_max))
+try:
+    chi2_matrix = np.load(
+        f"data/chi2/chi2_{layers}layers_path{path}_g{gamma_index}_nmax{n_max}_mmax{m_max}.npy"
+    )
+except:
+    chi2_matrix = np.zeros((m_max, n_max))
 
-for n in range(n_max):
-    for m in range(m_max):
-        result = subprocess.run(
-            [
-                "python",
-                "scripts/fit_rational_function.py",
-                f"--path={path}",
-                f"--gamma_index={gamma_index}",
-                f"--layers={layers}",
-                f"--powers_num={",".join(map(str,range(n+1)))}",
-                f"--powers_denom={",".join(map(str,range(m+1)))}",
-            ],
-            capture_output=True,
-            text=True,
-        ).stdout
-        try:
-            chi2_matrix[m, n] = float(result.split("\n")[-2])
-        except:
-            chi2_matrix[m, n] = np.inf
-        print(f"({n}, {m}): {chi2_matrix[m,n]}")
+    for n in range(n_max):
+        for m in range(m_max):
+            result = subprocess.run(
+                [
+                    "python",
+                    "scripts/fit_rational_function.py",
+                    f"--path={path}",
+                    f"--gamma_index={gamma_index}",
+                    f"--layers={layers}",
+                    f"--powers_num={",".join(map(str,range(n+1)))}",
+                    f"--powers_denom={",".join(map(str,range(1,m+1)))}",
+                ],
+                capture_output=True,
+                text=True,
+            ).stdout
+            try:
+                chi2_matrix[m, n] = float(result.split("\n")[-2])
+            except:
+                chi2_matrix[m, n] = np.inf
+            print(f"({n}, {m}): {chi2_matrix[m,n]}")
+    os.makedirs("data/chi2", exist_ok=True)
+    np.save(
+        f"data/chi2/chi2_{layers}layers_path{path}_g{gamma_index}_nmax{n_max}_mmax{m_max}.npy",
+        chi2_matrix,
+    )
 
 plt.imshow(
     chi2_matrix,
     cmap="viridis_r",
-    norm=LogNorm(vmin=chi2_matrix.min(), vmax=np.nan_to_num(chi2_matrix).max()),
+    norm=LogNorm(
+        vmin=chi2_matrix.min(),
+        vmax=np.nan_to_num(chi2_matrix, nan=1, posinf=1).max(),
+    ),
 )
 for n in range(n_max):
     for m in range(m_max):
         plt.text(n, m, f"{chi2_matrix[m,n]:.2e}", ha="center", va="center")
 plt.colorbar()
 plt.xlabel("Numerator order")
+plt.yticks(list(range(n_max)), labels=list(map(str, list(range(1, n_max + 1)))))
 plt.ylabel("Denominator order")
 plt.title(
     f"Chi^2/DOF for rational fits of different orders, {layers}-layer HC models\n"
