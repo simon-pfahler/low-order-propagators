@@ -18,7 +18,6 @@ import os
 import subprocess
 
 import matplotlib.pyplot as plt
-import numpy as np
 from docopt import docopt
 
 plt.style.use("scripts/iclr2027.mplstyle")
@@ -30,7 +29,6 @@ gamma_index = int(args["--gamma_index"])
 extrapolation = args["--extrapolation"]
 
 val_mass = -9.0  # Validation mass extrapolated to, cf. fit_rational_function.py
-nr_masses = 36  # Number of masses fitted, cf. fit_rational_function.py
 
 with open(
     f"data/chi2/chi2s_{layers}layers_path{path}_g{gamma_index}.json"
@@ -145,26 +143,15 @@ ax_chi2.set_title(
 fig.tight_layout()
 plt.show()
 
-# BIC = chi2 + nr_params * ln(nr_masses), where the cached reduced
-# chi2 is chi2 / (nr_masses - nr_params)
-bics = {
-    nr_params: best_fits[nr_params][2] * (nr_masses - nr_params)
-    + nr_params * np.log(nr_masses)
-    for nr_params in best_fits
-}
-best_bic_params = min(bics, key=bics.get)
-
 for nr_params in sorted(best_fits):
     powers_num, powers_denom, chi2, key = best_fits[nr_params]
-    marker = " <- BIC optimal" if nr_params == best_bic_params else ""
     if extrapolation:
         extrap_error = best_extraps.get(nr_params, "n/a")
         print(
             f"{nr_params} params: {powers_num}/{powers_denom} -> chi2/DOF {chi2}, "
-            f"BIC {bics[nr_params]:.1f}, extrapolation error {extrap_error}{marker}"
+            f"extrapolation error {extrap_error}"
         )
     else:
         print(
-            f"{nr_params} params: {powers_num}/{powers_denom} -> chi2/DOF {chi2}, "
-            f"BIC {bics[nr_params]:.1f}{marker}"
+            f"{nr_params} params: {powers_num}/{powers_denom} -> chi2/DOF {chi2}"
         )

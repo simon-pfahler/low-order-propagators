@@ -10,13 +10,14 @@ Options:
     --max_nr_params=<n>     Maximum number of parameters in the fit
 """
 
+import ast
 import json
 import os
-import subprocess
 
 import matplotlib.pyplot as plt
 import numpy as np
 from docopt import docopt
+from fit_rational_function import fit_rational_function, get_coef_data
 from matplotlib.colors import LogNorm
 
 args = docopt(__doc__)
@@ -25,8 +26,8 @@ path = args["--path"]
 gamma_index = int(args["--gamma_index"])
 max_nr_params = int(args["--max_nr_params"])
 
-nr_masses = (
-    36  # Number of masses fitted, cf. masses in fit_rational_function.py
+masses, coef_means, coef_stds, _, _ = get_coef_data(
+    layers, ast.literal_eval(path), gamma_index
 )
 
 rng = np.random.default_rng(42)
@@ -40,14 +41,14 @@ try:
 except:
     pass
 
-extrapdict = dict()
-try:
-    with open(
-        f"data/chi2/extraps_{layers}layers_path{path}_g{gamma_index}.json"
-    ) as f:
-        extrapdict = json.load(f)
-except:
-    pass
+
+def get_fit(powers_num, powers_denom):
+    """Fit a rational function with the given powers, returning the best fit
+    parameters, their errors and the reduced chi2."""
+    best_fit_params, best_fit_param_errors, chi2, _ = fit_rational_function(
+        powers_num, powers_denom, masses, coef_means, coef_stds
+    )
+    return best_fit_params, best_fit_param_errors, chi2
 
 
 def get_chi2(powers_num, powers_denom):
@@ -57,30 +58,34 @@ def get_chi2(powers_num, powers_denom):
     if key in chi2dict.keys():
         return chi2dict[key]
     try:
-        stdout = subprocess.run(
-            [
-                "python",
-                "scripts/fit_rational_function.py",
-                f"--path={path}",
-                f"--gamma_index={gamma_index}",
-                f"--layers={layers}",
-                f"--powers_num={powers_num_str}",
-                f"--powers_denom={powers_denom_str}",
-            ],
-            capture_output=True,
-            text=True,
-        ).stdout
-        result = float(stdout.split("\n")[-2])
-    except:
-        raise ValueError(f"Fit failed for {powers_num}/{powers_denom}")
-    try:
-        extrapdict[key] = float(
-            stdout.split("Extrapolation error at mass")[1].split("\n")[1]
+        best_fit_params, best_fit_param_errors, chi2 = get_fit(
+            powers_num, powers_denom
         )
     except:
-        pass
-    chi2dict[key] = result
-    return result
+        raise ValueError(f"Fit failed for {powers_num}/{powers_denom}")
+    chi2dict[key] = float(chi2)
+    # If a parameter agrees with 0 within statistics, also fit without
+    # that parameter and update the best fits if the pruned fit is better
+    for i in range(len(powers_num) + len(powers_denom)):
+        if abs(best_fit_params[i]) < best_fit_param_errors[i]:
+            new_powers_num = list(powers_num)
+            new_powers_denom = list(powers_denom)
+            if i < len(powers_num):
+                new_powers_num.pop(i)
+            else:
+                new_powers_denom.pop(i - len(powers_num))
+            if not new_powers_num:
+                # The numerator needs to contain at least one power
+                continue
+            new_nr_params = len(new_powers_num) + len(new_powers_denom)
+            new_chi2 = get_chi2(new_powers_num, new_powers_denom)
+            if new_chi2 < best_chi2s[new_nr_params - 1]:
+                best_chi2s[new_nr_params - 1] = new_chi2
+                best_paramss[new_nr_params - 1] = (
+                    new_powers_num,
+                    new_powers_denom,
+                )
+    return chi2dict[key]
 
 
 def print_status(best_paramss, best_chi2s):
@@ -88,17 +93,9 @@ def print_status(best_paramss, best_chi2s):
         f"\t{i+1} params: {','.join(map(str,best_paramss[i][0]))}/{','.join(map(str,best_paramss[i][1]))}"
         for i in range(max_nr_params)
     ]
-    # BIC = chi2 + nr_params * ln(nr_masses), where the cached reduced
-    # chi2 is chi2 / (nr_masses - nr_params)
-    bics = [
-        best_chi2s[i] * (nr_masses - i - 1) + (i + 1) * np.log(nr_masses)
-        for i in range(max_nr_params)
-    ]
-    best_bic_idx = int(np.argmin(bics))
     width = max(map(len, lines))
-    for i, (line, chi2, bic) in enumerate(zip(lines, best_chi2s, bics)):
-        marker = " <- BIC optimal" if i == best_bic_idx else ""
-        print(f"{line:<{width}} -> {chi2},\tBIC {bic:.1f}{marker}")
+    for line, chi2 in zip(lines, best_chi2s):
+        print(f"{line:<{width}} -> {chi2}")
 
 
 def mutate(params):
@@ -170,7 +167,12 @@ def mutate(params):
 
 
 best_paramss = [(list(range(i + 1)), []) for i in range(max_nr_params)]
-best_chi2s = [get_chi2(e[0], e[1]) for e in best_paramss]
+best_chi2s = [np.inf] * max_nr_params
+for i, params in enumerate(best_paramss):
+    chi2 = get_chi2(*params)
+    if chi2 < best_chi2s[i]:
+        best_chi2s[i] = chi2
+        best_paramss[i] = params
 
 for step in range(100):
     print(f"Step {step}")
@@ -191,7 +193,3 @@ for step in range(100):
         f"data/chi2/chi2s_{layers}layers_path{path}_g{gamma_index}.json", "w"
     ) as f:
         json.dump(chi2dict, f)
-    with open(
-        f"data/chi2/extraps_{layers}layers_path{path}_g{gamma_index}.json", "w"
-    ) as f:
-        json.dump(extrapdict, f)
