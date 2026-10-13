@@ -1,13 +1,20 @@
 """Calculate chi2/dof for rational function fits with different numbers of parameters
 
 Usage:
-    get_chi2_vs_nr_params.py --layers=<n> --path=<str> --gamma_index=<n> --max_nr_params=<n>
+    get_chi2_vs_nr_params.py --layers=<n> --path=<str> --gamma_index=<n> --max_nr_params=<n> [--nr_steps=<n>] [--initialization=<str>]
 
 Options:
     --layers=<n>            Number of layers in the HC models
     --path=<str>            Path to consider
     --gamma_index=<n>       Gamma structure index to consider
     --max_nr_params=<n>     Maximum number of parameters in the fit
+    --nr_steps=<n>          Number of steps to run [default: 100]
+    --initialization=<str>  Semicolon-separated initial guesses, e.g.
+                            "0/;1/2;3,4/8;0,2/2,4;0,2,4/2,4". Each guess has the
+                            form num/denom with comma-separated powers of (m+4).
+                            A guess replaces the default initial guess (the
+                            polynomial 0,...,i) for its number of parameters;
+                            parameter counts without a guess keep the default.
 """
 
 import ast
@@ -25,6 +32,7 @@ layers = int(args["--layers"])
 path = args["--path"]
 gamma_index = int(args["--gamma_index"])
 max_nr_params = int(args["--max_nr_params"])
+nr_steps = int(args["--nr_steps"])
 
 masses, coef_means, coef_stds, _, _ = get_coef_data(
     layers, ast.literal_eval(path), gamma_index
@@ -110,9 +118,9 @@ def mutate(params):
         candidates = [
             p
             for p in (
-                range(0, max_nr_params + 1)
+                range(0, max(powers_num + powers_denom) + 5)
                 if idx == 0
-                else range(1, max_nr_params + 1)
+                else range(1, max(powers_num + powers_denom) + 5)
             )
             if p not in lists[idx]
         ]
@@ -166,15 +174,60 @@ def mutate(params):
     return (sorted(new_num), sorted(new_denom))
 
 
+def parse_initialization(initialization):
+    """Parse an initialization string like "0/;1/2;3,4/8" into a list of
+    (powers_num, powers_denom) initial guesses."""
+    guesses = list()
+    for part in initialization.split(";"):
+        part = part.strip()
+        if not part:
+            continue
+        num_str, _, denom_str = part.partition("/")
+        powers_num = sorted(
+            int(e) for e in num_str.split(",") if e.strip() != ""
+        )
+        powers_denom = sorted(
+            int(e) for e in denom_str.split(",") if e.strip() != ""
+        )
+        if not powers_num:
+            raise ValueError(
+                f"Invalid initialization part '{part}':"
+                " the numerator needs at least one power!"
+            )
+        nr_params = len(powers_num) + len(powers_denom)
+        if nr_params > max_nr_params:
+            raise ValueError(
+                f"Invalid initialization part '{part}':"
+                f" more than {max_nr_params} parameters!"
+            )
+        guesses.append((powers_num, powers_denom))
+    if not guesses:
+        raise ValueError("The initialization contains no initial guesses!")
+    return guesses
+
+
 best_paramss = [(list(range(i + 1)), []) for i in range(max_nr_params)]
 best_chi2s = [np.inf] * max_nr_params
+if args["--initialization"]:
+    # Slot the provided guesses by their number of parameters (the last
+    # guess for a given number of parameters wins); parameter counts
+    # without a guess keep the default polynomial guess.
+    slots = {
+        len(powers_num) + len(powers_denom): (powers_num, powers_denom)
+        for powers_num, powers_denom in parse_initialization(
+            args["--initialization"]
+        )
+    }
+    for i in range(max_nr_params):
+        if i + 1 in slots:
+            best_paramss[i] = slots[i + 1]
 for i, params in enumerate(best_paramss):
     chi2 = get_chi2(*params)
     if chi2 < best_chi2s[i]:
         best_chi2s[i] = chi2
         best_paramss[i] = params
 
-for step in range(100):
+for step in range(nr_steps):
     print(f"Step {step}")
     print_status(best_paramss, best_chi2s)
     for params in best_paramss:
