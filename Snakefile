@@ -5,7 +5,6 @@ MASSES = ["-9.00"] + [f"{m:.2f}" for m in np.arange(-5, 2.2, 0.2)]
 SMALL_MASSES = [f"{m:.2f}" for m in np.arange(-5, -0.4, 0.2)]
 LARGE_MASSES = ["-9.00"] + [f"{m:.2f}" for m in np.arange(-0.4, 2.2, 0.2)]
 SEEDED_MASSES = [f"{m:.2f}" for m in range(-5,3)]
-SEEDED_MASSES = MASSES
 # <<< Parameters
 
 # >>> Global wildcard constraints
