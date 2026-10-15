@@ -1,7 +1,7 @@
 """Fit a rational function to the mass dependence.
 
 Usage:
-    fit_rational_function.py --path=<str> --gamma_index=<n> --layers=<n> --powers_num=<n> --powers_denom=<n> [--plot]
+    fit_rational_function.py --path=<str> --gamma_index=<n> --layers=<n> --powers_num=<n> --powers_denom=<n> [--plot] [--save]
 
 Options:
     --path=<str>            Path to plot coefficients of
@@ -10,6 +10,7 @@ Options:
     --powers_num=<n>        Powers of (m+4) to use in numerator
     --powers_denom=<n>      Powers of (m+4) to use in denominator
     --plot                  Plot the resulting fit
+    --save                  Save the plot
 """
 
 import ast
@@ -145,6 +146,73 @@ def get_rational_function(powers_num, powers_denom):
     return rational_function
 
 
+def fold_exponent(s):
+    """Fold the exponent of a PDG-formatted number into its mantissa,
+    e.g. 1.642(3)e-4 -> 0.0001642(3)."""
+    if "e" not in s:
+        return s
+    num, exp = s.split("e")
+    exp = int(exp)
+    match = re.fullmatch(r"(-?)(\d+)(?:\.(\d+))?(\(\d+\))?", num)
+    sign, int_part, frac_part, unc = (
+        match.group(1),
+        match.group(2),
+        match.group(3) or "",
+        match.group(4) or "",
+    )
+    digits = int_part + frac_part
+    point = len(int_part) + exp
+    if point <= 0:
+        num = "0." + "0" * (-point) + digits
+    elif point >= len(digits):
+        num = digits + "0" * (point - len(digits))
+    else:
+        num = digits[:point] + "." + digits[point:]
+    return sign + num + unc
+
+
+def format_pdg_plain(mean, std):
+    """Format (mean, std) in PDG notation without an exponential."""
+    s, zero = format_pdg(mean, std)
+    return fold_exponent(s), zero
+
+
+def get_latex_formula(powers_num, powers_denom, params, param_errors):
+    """Return the fitted rational function as a LaTeX string, with the
+    parameters formatted in PDG notation."""
+
+    def term(coef, power):
+        if power == 0:
+            return coef
+        if power == 1:
+            return f"{coef}(m+4)"
+        return f"{coef}(m+4)^{{{power}}}"
+
+    def build(powers, coefs):
+        terms = [term(coef, power) for coef, power in zip(coefs, powers)]
+        return " + ".join(terms).replace(" + -", " - ") or "0"
+
+    def get_coefs(offset, powers):
+        return [
+            format_pdg_plain(p, e)[0]
+            for p, e in zip(
+                params[offset : offset + len(powers)],
+                param_errors[offset : offset + len(powers)],
+            )
+        ]
+
+    num_str = build(powers_num, get_coefs(0, powers_num))
+    denom_str = (
+        "1"
+        if len(powers_denom) == 0
+        else (
+            "1 + "
+            + build(powers_denom, get_coefs(len(powers_num), powers_denom))
+        ).replace(" + -", " - ")
+    )
+    return rf"\frac{{{num_str}}}{{{denom_str}}}"
+
+
 def fit_rational_function(
     powers_num, powers_denom, masses, coef_means, coef_stds
 ):
@@ -261,16 +329,20 @@ if __name__ == "__main__":
 
     print(f"Fit function parameters:")
     print(
-        f"Numerator: {", ".join([format_pdg(p,e)[0] for p, e in zip(best_fit_params[:len(powers_num)], best_fit_param_errors[:len(powers_num)])])}"
+        f"Numerator: {", ".join([format_pdg_plain(p,e)[0] for p, e in zip(best_fit_params[:len(powers_num)], best_fit_param_errors[:len(powers_num)])])}"
     )
     print(
-        f"Denominator: {", ".join([format_pdg(p,e)[0] for p, e in zip(best_fit_params[len(powers_num):], best_fit_param_errors[len(powers_num):])])}"
+        f"Denominator: {", ".join([format_pdg_plain(p,e)[0] for p, e in zip(best_fit_params[len(powers_num):], best_fit_param_errors[len(powers_num):])])}"
     )
     extrap_error = (
         abs(rational_function(val_mass, *best_fit_params) - coef_val_mean)
         / coef_val_std
     )
     print(f"Extrapolation error at mass {val_mass}:\n{extrap_error}")
+    print(f"Fit formula:")
+    print(
+        f"\t{get_latex_formula(powers_num, powers_denom, best_fit_params, best_fit_param_errors)}"
+    )
     print(f"Chisq/DOF:\n{best_chisq}")
 
     if not args["--plot"]:
@@ -295,6 +367,7 @@ if __name__ == "__main__":
         linestyle="none",
         capsize=5,
         marker="o",
+        color="#ee7733",
         markerfacecolor="none",
         label="Data",
     )
@@ -305,21 +378,21 @@ if __name__ == "__main__":
         linestyle="none",
         capsize=5,
         marker="o",
-        c="C2",
+        color="#ee3377",
         markerfacecolor="none",
         label="Validation",
     )
     plt.plot(
         masses_fit,
         coefs_fit,
-        label=f"Fit ({powers_num}, {powers_denom})",
-        color="C1",
+        label=f"Fit",
+        color="#0077bb",
     )
     plt.fill_between(
         masses_fit,
         coefs_fit - yerr_boot,
         coefs_fit + yerr_boot,
-        facecolor="C1",
+        facecolor="#0077bb",
         alpha=0.5,
     )
 
@@ -331,4 +404,10 @@ if __name__ == "__main__":
     plt.ylabel("Real part of coefficient")
     plt.legend()
     plt.tight_layout()
+    if args["--save"]:
+        os.makedirs("plots/rational_functions", exist_ok=True)
+        plt.savefig(
+            f"plots/rational_functions/rational_function_fit.pdf",
+            bbox_inches="tight",
+        )
     plt.show()
