@@ -4,7 +4,7 @@ Usage:
     plot_approximation_quality.py --layers=<n> --action=<name> --lattice_size=<str> --model_action=<name> --model_lattice_size=<str>
 
 Options:
-    --layers=<n>                Number of layers of the model, or number of steps of the hopping expansion/GMRES
+    --layers=<n>                Number of layers of the model, or number of steps of the hopping expansion/PolyH
     --action=<name>             Action name ("WilsonQuenched", "WilsonDynamic" or "Haar")
     --lattice_size=<str>        Lattice size string (e.g. "8c16")
     --model_action=<name>       Action the model was trained on
@@ -46,9 +46,9 @@ masses_HC = []
 means_restricted = []
 stds_restricted = []
 masses_restricted = []
-means_GMRES = []
-stds_GMRES = []
-masses_GMRES = []
+means_PolyH = []
+stds_PolyH = []
+masses_PolyH = []
 
 # Find all masses
 masses = sorted(set(extract_mass(f) for f in os.listdir("data/Qs")))
@@ -65,13 +65,13 @@ for mass in masses:
         means_hopping.append(torch.mean(data))
         stds_hopping.append(torch.std(data))
 
-    # GMRES
-    gmres_path = f"data/Qs/Qs_{layers}layers_GMRES_{action}_{lattice_size_str}_m{mass:.2f}.pt"
-    if os.path.exists(gmres_path):
-        data = torch.load(gmres_path, weights_only=True)
-        masses_GMRES.append(mass)
-        means_GMRES.append(torch.mean(data))
-        stds_GMRES.append(torch.std(data))
+    # PolyH
+    polyh_path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_PolyH_{action}_{lattice_size_str}_m{mass:.2f}.pt"
+    if os.path.exists(polyh_path):
+        data = torch.load(polyh_path, weights_only=True)
+        masses_PolyH.append(mass)
+        means_PolyH.append(torch.mean(data))
+        stds_PolyH.append(torch.std(data))
 
     # HC model
     hc_path = f"data/Qs/Qs_{layers}layers_{model_action}_{model_lattice_size_str}_HC_{action}_{lattice_size_str}_m{mass:.2f}.pt"
@@ -104,15 +104,15 @@ plt.errorbar(
     label="Hopping expansion",
 )
 plt.errorbar(
-    masses_GMRES,
-    means_GMRES,
-    yerr=stds_GMRES,
+    masses_PolyH,
+    means_PolyH,
+    yerr=stds_PolyH,
     linestyle="none",
     color="#ee3377",
     capsize=5,
     marker="^",
     markerfacecolor="none",
-    label="GMRES",
+    label="PolyH",
 )
 plt.errorbar(
     masses_restricted,
@@ -149,8 +149,8 @@ plt.legend()
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
 
 plt.ylim(
-    min(means_HC + means_restricted + means_hopping + means_GMRES) / 1.3,
-    1.3 * max(means_HC + means_restricted + means_GMRES),
+    min(means_HC + means_restricted + means_hopping + means_PolyH) / 1.3,
+    1.3 * max(means_HC + means_restricted + means_PolyH),
 )
 
 os.makedirs("plots/Qs/", exist_ok=True)
@@ -162,22 +162,22 @@ plt.savefig(
 
 improvements_HC = torch.tensor(
     [
-        min((eGMRES - eHC) / eGMRES, (eH - eHC) / eH)
-        for eGMRES, eH, eHC in zip(means_GMRES, means_hopping, means_HC)
+        min((ePolyH - eHC) / ePolyH, (eH - eHC) / eH)
+        for ePolyH, eH, eHC in zip(means_PolyH, means_hopping, means_HC)
     ]
 )
 improvements_restricted = torch.tensor(
     [
-        min((eGMRES - eR) / eGMRES, (eH - eR) / eH)
-        for eGMRES, eH, eR in zip(means_GMRES, means_hopping, means_restricted)
+        min((ePolyH - eR) / ePolyH, (eH - eR) / eH)
+        for ePolyH, eH, eR in zip(means_PolyH, means_hopping, means_restricted)
     ]
 )
 
-threshold_idx = masses.index(-0.4)
+threshold_idx = masses.index(-1.2)
 
 print(
-    f"Relative improvement between HC and best baseline: {100*torch.mean(improvements_HC):.2f}% ({100*torch.mean(improvements_HC[:threshold_idx]):.2f}% below m=-0.5, {100*torch.mean(improvements_HC[threshold_idx:]):.2f}% above m=-0.5)"
+    f"Relative improvement between HC and best baseline: {100*torch.mean(improvements_HC):.2f}% ({100*torch.mean(improvements_HC[:threshold_idx]):.2f}% below m=-1.2, {100*torch.mean(improvements_HC[threshold_idx:]):.2f}% above m=-1.2)"
 )
 print(
-    f"Relative improvement between restricted and best baseline: {100*torch.mean(improvements_restricted):.2f}% ({100*torch.mean(improvements_restricted[:threshold_idx]):.2f}% below m=-0.5, {100*torch.mean(improvements_restricted[threshold_idx:]):.2f}% above m=-0.5)"
+    f"Relative improvement between restricted and best baseline: {100*torch.mean(improvements_restricted):.2f}% ({100*torch.mean(improvements_restricted[:threshold_idx]):.2f}% below m=-1.2, {100*torch.mean(improvements_restricted[threshold_idx:]):.2f}% above m=-1.2)"
 )
