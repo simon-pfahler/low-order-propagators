@@ -135,7 +135,7 @@ for ax_idx, layers in enumerate(layerss):
     ax[ax_idx].set_ylim(ylim)
 
 fig.suptitle(
-    f"Relative propagator error vs time separation at $m={mass}$", y=0.98
+    f"Relative propagator error vs time separation at $m={mass:.0f}$", y=0.98
 )
 
 handles, labels = [], []
